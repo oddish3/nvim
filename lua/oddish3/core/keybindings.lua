@@ -343,16 +343,27 @@ toggleterm.setup({
   },
  },
 })
-vim.api.nvim_create_autocmd("TermOpen", {
-  pattern = "term://*toggleterm#*",
-  callback = function()
-    local cwd = vim.fn.getcwd()
-    vim.cmd("tcd " .. cwd)
-  end,
-})
 
+function _G.set_terminal_cwd()
+  -- Get the directory of the current file
+  local file_dir = vim.fn.expand('%:p:h')
 
+  -- Define the command to open toggleterm and change to the file's directory
+  local cmd = "cd " .. file_dir .. " && " .. vim.o.shell
+  
+  -- Setup toggleterm terminal with the specific command
+  require("toggleterm.terminal").Terminal:new({
+    cmd = cmd,
+    direction = "float",
+    close_on_exit = true,
+    on_open = function(term)
+      vim.cmd("startinsert!")
+      vim.api.nvim_buf_set_keymap(term.bufnr, "t", "<c-z>", "<cmd>close<CR>", {noremap = true, silent = true})
+    end,
+  }):toggle()
+end
 
+vim.api.nvim_set_keymap('n', '<c-z>', ':lua set_terminal_cwd()<CR>', {noremap = true, silent = true})
 
 
 ---- nav
