@@ -24,4 +24,9 @@ vim.api.nvim_create_autocmd("BufReadPost", {
     end
   end,
 })
---vim.g.nvim_tree_respect_buf_cwd = 1
+-- tree / alpha
+vim.g.nvim_tree_respect_buf_cwd = 1
+
+-- vimtex - cmp
+vim.keymap.set("i", "<C-s>", function() require('cmp_vimtex.search').search_menu() end)
+

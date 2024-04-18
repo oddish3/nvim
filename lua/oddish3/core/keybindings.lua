@@ -146,7 +146,7 @@ vim.opt_local.spelllang = "en_gb"
 
 
 vim.api.nvim_create_autocmd("FileType", {
-    pattern = "tex",
+    pattern = {"tex", "markdown"},
     callback = function()
         vim.opt_local.spell = true
         vim.opt_local.spelllang = "en_gb"
@@ -154,19 +154,20 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 -- Function to trigger Telescope's spell suggest
-local function telescope_spell_suggest()
-  require('telescope.builtin').spell_suggest(
-    require('telescope.themes').get_cursor({
-      attach_mappings = function(_, map)
-        map({ 'i', 'n' }, '<C-y>', require('telescope.actions').select_default)
-        return true
-      end,
-    })
-  )
-end
+--local function telescope_spell_suggest()
+--  require('telescope.builtin').spell_suggest(
+--    require('telescope.themes').get_cursor({
+--      attach_mappings = function(_, map)
+--        map({ 'i', 'n' }, '<C-y>', require('telescope.actions').select_default)
+--        return true
+--      end,
+--    })
+--  )
+--end
+-- Optional: Normal mode mapping to directly invoke spelling suggestions
+--vim.keymap.set('n', '<C-i>', telescope_spell_suggest, { desc = 'Spelling Suggestions' })
 
--- Keep the existing mapping for correcting the last spelling error in insert mode
-vim.api.nvim_set_keymap('i', '<C-l>', '<c-g>u<Esc>[s1z=`]a<c-g>u', { noremap = true, silent = true })
+
 
 _G.spell_suggest_last_error = function()
   -- Exit insert mode temporarily
@@ -178,10 +179,11 @@ _G.spell_suggest_last_error = function()
 end
 
 -- Insert mode mapping to invoke spelling suggestions at the last error
-vim.api.nvim_set_keymap('i', '<C-f>', '<ESC>:lua _G.spell_suggest_last_error()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('i', '<C-i>', '<ESC>:lua _G.spell_suggest_last_error()<CR>', { noremap = true, silent = true })
 
--- Optional: Normal mode mapping to directly invoke spelling suggestions
-vim.keymap.set('n', '<C-i>', telescope_spell_suggest, { desc = 'Spelling Suggestions' })
+-- Keep the existing mapping for correcting the last spelling error in insert mode
+vim.api.nvim_set_keymap('i', '<C-l>', '<c-g>u<Esc>[s1z=`]a<c-g>u', { noremap = true, silent = true })
+
 
    
 ---- autocapitalisation 
@@ -208,73 +210,51 @@ local function autoCapitalize()
 end
 
 -- Set up the autocmd specifically for .tex files
-vim.api.nvim_create_autocmd("InsertCharPre", {
-    pattern = "*.tex",
-    callback = autoCapitalize,
-})
+function _G.processLaTeXFile()
+    print("Function triggered")
+    local path = vim.api.nvim_buf_get_name(0)
+    local content = vim.fn.readfile(path)
+    local changed = false
 
--- Capitalize the start of every word unless it is 2 letters long or less
--- Define the function globally
-function _G.capitalizeSelection()
-    local _, start_line, start_col, _ = unpack(vim.fn.getpos("'<"))
-    local _, end_line, end_col, _ = unpack(vim.fn.getpos("'>"))
-    
-    if start_line > end_line or (start_line == end_line and start_col > end_col) then
-        start_line, end_line, start_col, end_col = end_line, start_line, end_col, start_col
-    end
-
-    end_col = end_col + 1  -- Adjust end_col to include the last character
-
-    local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
-    if #lines == 0 then return end
-    if #lines == 1 then
-        lines[1] = lines[1]:sub(start_col, end_col)
-    else
-        lines[1] = lines[1]:sub(start_col)
-        lines[#lines] = lines[#lines]:sub(1, end_col)
-    end
-    local text = table.concat(lines, "\n")
-
-    local capitalized_text = text:gsub("(%w+)", function(word)
-        if #word > 2 then
-            return word:sub(1,1):upper() .. word:sub(2)
-        else
-            return word
+    for i, line in ipairs(content) do
+        print("Original line: " .. line)  -- Print each line before change
+        local new_line = line:gsub("\\(%w+)%s*{(.-)}", function(header, innerContent)
+            print("Found header: " .. header)  -- Check which header is matched
+            if header:match("^chapter$|^section$|^subsection$|^subsubsection$|^paragraph$|^subparagraph$") then
+                local modifiedContent = innerContent:gsub("%f[%w](%w%w%w+)%f[%W]", function(word)
+                    print("Capitalize word: " .. word)  -- Debug output for words being capitalized
+                    return word:sub(1,1):upper() .. word:sub(2)
+                end)
+                print("Modified content: " .. modifiedContent)  -- Show modified content
+                if modifiedContent ~= innerContent then
+                    changed = true
+                    return "\\" .. header .. "{" .. modifiedContent .. "}"
+                end
+            end
+            return "\\" .. header .. "{" .. innerContent .. "}"
+        end)
+        if new_line ~= line then
+            print("Modified line: " .. new_line)  -- Print changed line
+            content[i] = new_line
         end
-    end)
+    end
 
-    if #lines == 1 then
-        vim.api.nvim_buf_set_text(0, start_line - 1, start_col - 1, start_line - 1, start_col - 1 + #text, {capitalized_text})
+    if changed then
+        vim.fn.writefile(content, path)
+        print("LaTeX headers capitalized and file updated.")
     else
-        local new_lines = vim.split(capitalized_text, "\n", true)
-        vim.api.nvim_buf_set_lines(0, start_line - 1, end_line, false, new_lines)
+        print("No changes needed.")
     end
 end
 
--- Set up the keybinding in visual mode
-vim.api.nvim_set_keymap('v', '<leader>c', '<Esc>:lua _G.capitalizeSelection()<CR>', {noremap = true, silent = true})
+--vim.cmd [[
+--  augroup AutoCapitalizeTexHeaders
+  --  autocmd!
+    --autocmd BufReadPost,BufWritePre *.tex lua _G.processLaTeXFile()
+  --augroup END
+--]]
+--
 
-
--- function autocap
-local function capitalizeTitlesAndItems()
-    -- Capitalize the first letter in LaTeX sections/subsections but only for words longer than 2 characters
-    vim.cmd('%s/\\\\\\(section\\|subsection\\|subsubsection\\|paragraph\\|subparagraph\\)\\s*{\\zs\\([a-z]\\{3,\\}\\)/\\u\\2/ge')
-
-    -- Capitalize after `\item`
-    vim.cmd('%s/\\\\item\\s*\\(\\l\\)/\\\\item \\u\\1/ge')
-
-    -- Capitalize the first letter after punctuation (. ! ?) followed by one or more spaces
-    vim.cmd('%s/\\([.!?]\\)\\s\\+\\(\\l\\)/\\1 \\u\\2/ge')
-
-    -- Example: Capitalize the first letter at the beginning of a line
-    vim.cmd('%s/^\\s*\\(\\l\\)/\\u\\1/ge')
-end
-
--- Bind the function to the CC keybinding
-vim.api.nvim_set_keymap('n', 'CC', ':lua capitalizeTitlesAndItems()<CR>', { noremap = true, silent = true })
-
--- Define a command in Neovim to run the function
-vim.api.nvim_create_user_command('Cap', capitalizeTitlesAndItems, {})
 
 ---- misc
 
@@ -363,7 +343,7 @@ function _G.set_terminal_cwd()
   }):toggle()
 end
 
-vim.api.nvim_set_keymap('n', '<c-z>', ':lua set_terminal_cwd()<CR>', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('n', '<c-x>', ':lua set_terminal_cwd()<CR>', {noremap = true, silent = true})
 
 
 ---- nav
@@ -372,3 +352,39 @@ vim.api.nvim_set_keymap('n', '<C-h>', '<C-w>h', {noremap = true, silent = true})
 vim.api.nvim_set_keymap('n', '<C-l>', '<C-w>l', {noremap = true, silent = true})
 vim.api.nvim_set_keymap('n', '<C-j>', '<C-w>j', {noremap = true, silent = true})
 vim.api.nvim_set_keymap('n', '<C-k>', '<C-w>k', {noremap = true, silent = true})
+
+-- anki
+--require('oddish3.utils.anki_math_zone')
+--require('cmp_vimtex').setup()
+
+
+-- cmp vimtex
+vim.api.nvim_set_keymap('i', '<C-s>', '<cmd>lua require("cmp_vimtex.search").search_menu()<CR>', { noremap = true, silent = true })
+
+
+
+
+-- Clear previous autocommands in the 'focus' group and recreate the group
+local group = vim.api.nvim_create_augroup('focus', { clear = true })
+
+-- Autocommand that exits insert mode when focus is lost
+vim.api.nvim_create_autocmd('FocusLost', {
+    group = group,
+    pattern = '*',
+    callback = function()
+        if vim.fn.mode() == 'i' then
+            vim.cmd('stopinsert')
+        end
+    end
+})
+
+-- Autocommand that enters insert mode when focus is gained
+vim.api.nvim_create_autocmd('FocusGained', {
+    group = group,
+    pattern = '*',
+    callback = function()
+        if vim.fn.getcmdwintype() == '' then
+            vim.cmd('startinsert')
+        end
+    end
+})

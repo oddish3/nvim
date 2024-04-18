@@ -14,6 +14,10 @@ return {
           return ""
       end
     end
+    
+	local function getWords()
+  		return tostring(vim.fn.wordcount().words)
+	end
 
     require("lualine").setup({
       options = {
@@ -27,6 +31,7 @@ return {
         lualine_x = { 
           'filetype',
           { check_caps_lock, color = { fg = '#ff9e64' } }, -- Use the function here
+	{ getWords },
         },
         -- Other sections as per your current configuration...
       },

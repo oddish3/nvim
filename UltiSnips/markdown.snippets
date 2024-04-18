@@ -1,107 +1,54 @@
 
 global !p
+import vim
+import re
+
 def math():
-	return vim.eval('vimtex#syntax#in_mathzone()') == '1'
+    buffer = "\n".join(vim.current.buffer[:])
+    cursor = vim.current.window.cursor
+    position = sum(len(vim.current.buffer[i]) + 1 for i in range(cursor[0] - 1)) + cursor[1]
 
-def comment(): 
-	return vim.eval('vimtex#syntax#in_comment()') == '1'
+    # Regular expression to detect inline and display math
+    regex = r'(\[\s*\$\s*\](.*?)\[\s*\/\$\s*\])|(\[\s*\$\$\s*\](.*?)\[\s*\/\$\$\s*\])'
+    matches = list(re.finditer(regex, buffer, re.DOTALL))
 
-def env(name):
-	[x,y] = vim.eval("vimtex#env#is_inside('" + name + "')") 
-	return x != '0' and y != '0'
-
-
+    for match in matches:
+        start, end = match.start(), match.end()
+        if start <= position < end:
+            # Return 1 for any math context (either inline or display)
+            return 1
+    return 0  # Return 0 if not within any math context
 endglobal
+
 
 #latex helpers / environments 
 
-snippet Template0 "Basic template" b
-\input{/home/oddish3/Documents/Templates/tex/template0.tex}
-
-\title{${1:${VISUAL}}}
-
-\begin{document}
-\maketitle
-	$0
-\end{document}
+snippet nq "Notes template" b
+Q: ${1:}
+A: ${2:}
+Q: ${3:}
+A: ${4:}
+Q: ${5}
+A: ${6}
 endsnippet
 
-snippet Template1 "adv template" b
-\input{/home/oddish3/Documents/Templates/tex/template1.tex}
-
-\title{${1:${VISUAL}}}
-\author{${2:${VISUAL}}} 
-\date{}
-
-\begin{document}
-\maketitle
-
-${3:${VISUAL}}
-
-
-\end{document}
-endsnippet
-
-snippet Citpac "citation packages" b
-\usepackage{natbib}
-\bibliographystyle{abbrvnat}
-\setcitestyle{authoryear,open={(},close={)}}
-endsnippet
-
-
-snippet pac "Package" b
-\usepackage[${1:options}]{${2:package}}$0
-endsnippet
-
-snippet beg "begin{} / end{}" bA
-\\begin{$1}$2
-	$3
-\\end{$1}
-endsnippet
-
-snippet table "Table environment" b
-\begin{table}[${1:htpb}]
-	\centering
-	\caption{${2:caption}}
-	\label{tab:${3:label}}
-	\begin{tabular}{${5:c}}
-	$0${5/((?<=.)c|l|r)|./(?1: & )/g}
-	\end{tabular}
-\end{table}
-endsnippet
-
-
-snippet Fig "Figure environment" b
-\begin{figure}[${1:H}]
-    \centering
-    \includegraphics[width=0.${2:4}\textwidth]{figures/`!p snip.rv = vim.eval("expand('%:t:r')")`/fig${3:}.png}
-    \caption{${4:}}
-\end{figure}
-
-$0
-endsnippet
 
 snippet mk "Math" wA
-$${1}$`!p
+[$]${1}[/$]
+`!p
 if t[2] and t[2][0] not in [',', '.', '?', '-', ' ']:
-	snip.rv = ' '
+    snip.rv = ' '
 else:
-	snip.rv = ''
+    snip.rv = ''
 `$2
 endsnippet
 
+
 snippet dm "Math" wA
-\[
+[$$]
 ${1:${VISUAL}}
-\] $0
+[/$$] $0
 endsnippet
-
-snippet proof1 "proof" bA
-\begin{proof1} ${1:}
-	${2:${VISUAL}}
-\end{proof1}
-endsnippet
-
 
 snippet equa "Equation" bA
 \begin{equation}
@@ -115,6 +62,7 @@ snippet ali "Align" bA
 \end{align*}
 endsnippet
 
+
 context "math()"
 snippet case "cases" wA
 \begin{cases}
@@ -126,14 +74,6 @@ snippet code "cases" bA
 \begin{lstlisting}
 	$1
 \end{lstlisting}
-endsnippet
-
-snippet citet "citation text " A
-\citet{${1:}}
-endsnippet
-
-snippet citep "citation parenthesis " A
-\citep{${1:}}
 endsnippet
 
 snippet enum "Enumerate" A
@@ -166,66 +106,72 @@ endsnippet
 
 # matrix environment
 
+context "math()"
 snippet pmat "pmat" iA
 \begin{pmatrix} $1 \end{pmatrix} $0
 endsnippet
 
+context "math()"
 snippet bmat "bmat" iA
 \begin{bmatrix} $1 \end{bmatrix} $0
 endsnippet
 
 # bracket environment
 
+context "math()"
 snippet ( " bracket " iA
 (${1:${VISUAL}}) $0
 endsnippet
+
 
 context "math()"
 snippet () "left( right)" iA
 \left( ${1:${VISUAL}} \right) $0
 endsnippet
 
+context "math()"
 snippet lr "left( right)" i
 \left( ${1:${VISUAL}} \right) $0
 endsnippet
 
+context "math()"
 snippet lr( "left( right)" i
 \left( ${1:${VISUAL}} \right) $0
 endsnippet
 
+context "math()"
 snippet lr| "left| right|" i
 \left| ${1:${VISUAL}} \right| $0
 endsnippet
 
+context "math()"
 snippet lr{ "left\{ right\}" i
 \left\\{ ${1:${VISUAL}} \right\\} $0
 endsnippet
 
+context "math()"
 snippet lrb "left\{ right\}" i
 \left\\{ ${1:${VISUAL}} \right\\} $0
 endsnippet
 
+context "math()"
 snippet lr[ "left[ right]" i
 \left[ ${1:${VISUAL}} \right] $0
 endsnippet
 
-# trying out ##
-
-
-
-
-
-
 # math
+
 
 context "math()"
 snippet // "Fraction" iA
 \\frac{$1}{$2}$0
 endsnippet
 
+context "math()"
 snippet / "Fraction" i
 \\frac{${VISUAL}}{$1}$0
 endsnippet
+
 
 context "math()"
 snippet '((\d+)|(\d*)(\\)?([A-Za-z]+)((\^|_)(\{\d+\}|\d))*)/' "symbol frac" wrA
@@ -233,6 +179,7 @@ snippet '((\d+)|(\d*)(\\)?([A-Za-z]+)((\^|_)(\{\d+\}|\d))*)/' "symbol frac" wrA
 endsnippet
 
 priority 1000
+
 context "math()"
 snippet '^.*\)/' "() frac" wrA
 `!p
@@ -254,64 +201,81 @@ snippet '(?<!\\)(sin|cos|arccot|cot|csc|ln|log|exp|star|perp)' "ln" rwA
 \\`!p snip.rv = match.group(1)`
 endsnippet
 
+context "math()"
 snippet sum "sum" w
 \sum_{i=${1:1}}^{${3:n}} ${4:${VISUAL}} $0
 endsnippet
 
+context "math()"
 snippet prod "product" w
 \prod_{${1:i=${2:1}}}^{${3:\infty}} ${4:${VISUAL}} $0
 endsnippet
 
-snippet part "ddx" w
+context "math()"
+snippet part "d/dx" w
 \frac{\partial ${1:V}}{\partial ${2:x}} $0
 endsnippet
+
 
 context "math()"
 snippet sq "\sqrt{}" iA
 \sqrt{${1:${VISUAL}}} $0
 endsnippet
 
+
 context "math()"
 snippet sr "^2" iA
 ^2
 endsnippet
+
 
 context "math()"
 snippet cb "^3" iA
 ^3
 endsnippet
 
+
 context "math()"
 snippet td "to the ... power" iA
 ^{$1}$0
 endsnippet
+
 
 context "math()"
 snippet rd "to the ... power" iA
 ^{$1}$0
 endsnippet
 
+
+context "math()"
 snippet _ "subscript" iA
 _{$1}$0
 endsnippet
 
+
+context "math()"
 snippet ooo "\infty" iA
 \infty
 endsnippet
 
 
+context "math()"
 snippet <= "leq" iA
 \le 
 endsnippet
 
+
+context "math()"
 snippet >= "geq" iA
 \ge 
 endsnippet
 
+
 context "math()"
-snippet EE "geq" iA
+snippet EE "" iA
 \exists 
 endsnippet
+
 
 
 context "math()"
@@ -319,38 +283,49 @@ snippet AA "forall" iA
 \forall 
 endsnippet
 
+
+context "math()"
 snippet => "implies" Ai
 \implies
 endsnippet
 
+
+context "math()"
 snippet =< "implied by" Ai
 \impliedby
 endsnippet
+
 
 context "math()"
 snippet iff "iff" Ai
 \iff
 endsnippet
 
+
 context "math()"
 snippet mcal "mathcal" iA
 \mathcal{$1}$0
 endsnippet
+
 
 context "math()"
 snippet xx "cross" iA
 \times 
 endsnippet
 
+
 priority 100
+context "math()"
 snippet ** "cdot" iA
 \cdot 
 endsnippet
+
 
 context "math()"
 snippet aa "asterix" iA
 \ast
 endsnippet
+
 
 context "math()"
 snippet norm "norm" iA
@@ -363,43 +338,56 @@ snippet dint "integral" wA
 \int_{${1:-\infty}}^{${2:\infty}} ${3:${VISUAL}} $0
 endsnippet
 
+
 context "math()"
 snippet set "set" wA
 \\{$1\\} $0
 endsnippet
+
 
 context "math()"
 snippet cc "subset" Ai
 \subset 
 endsnippet
 
+
 context "math()"
 snippet notqin "not in " iA
 \not\in 
 endsnippet
+
 
 context "math()"
 snippet inn "in " iA
 \in 
 endsnippet
 
+
 context "math()"
 snippet bfq "math bold text" iA
 \ \ \mathbf{${1:}} \ \ $0
 endsnippet
 
+
+context "math()"
 snippet === "equiv" iA
 \equiv
 endsnippet
 
+
+context "math()"
 snippet \== "equals" iA
 &= $1 \\\\
 endsnippet
 
+
+context "math()"
 snippet != "n equals" iA
-\neq ${1:0} 
+\neq = 0 
 endsnippet
 
+
+context "math()"
 snippet taylor "taylor" w
 \sum_{${1:k}=${2:0}}^{${3:\infty}} ${4:c_$1} (x-a)^$1 $0
 endsnippet
@@ -407,48 +395,61 @@ endsnippet
 
 # econometrics
 
+
 context "math()"
 snippet argmi "argmin" w
 \argmin{$1:}
 endsnippet
+
 
 context "math()"
 snippet argma "argmax" w
 \argmax{$1:}
 endsnippet
 
+
 context "math()"
 snippet orth "orthogonal" w
 \orth
 endsnippet
 
+
+context "math()"
 snippet ols "OLS" iA
 \textnormal{OLS} $2
 endsnippet
 
+
+context "math()"
 snippet rank "rank" iA
 \textnormal{rank} $2
 endsnippet
 
+
+context "math()"
 snippet NN "n" iA
 \N
 endsnippet
+
 
 context "math()"
 snippet ndd "distributed normal" iA
 \sim \mathcal{N}(${1:\mu},\,${2:\sigma^2})
 endsnippet
 
+
 context "math()"
 snippet nDD "Normal distribution" iA
 \mathcal{N}(${2:},\,${3:})
 endsnippet
 
+
 context "math()"
 snippet snd "Standard Normal distribution" iA
 \mathcal{N}(0,\,1)
 endsnippet
-context "math()"
+
+
 
 context "math()"
 snippet mnD "Multivariate Normal distribution" iA
@@ -464,31 +465,37 @@ y
 \\end{array}\\right)\\right)
 endsnippet
 
-context "math()"
+
 snippet yreg "Dynamic regression equation" iA
 y_{${1:1}} = \beta_{${2:0}} + \beta_{${3:1}} x_{$3} + u_{${4:}} 
 endsnippet
+
 
 context "math()"
 snippet regr "Linear regression equation" iA
 ${1:} = \beta_0 + \beta_1 ${2:} + \epsilon
 endsnippet
 
+
 context "math()"
 snippet pdfn "Normal PDF" w
 \frac{1}{\sqrt{2\pi[${3:\sigma^2}]}} \exp\left(-\frac{([${1:x}]-[${2:\mu}])^2}{2[${3:\sigma^2}]}\right) $0
 endsnippet
 
+
+context "math()"
 snippet XX "" iA
 (X'X)^{-1}
 endsnippet
 
 # probability 
 
+
 context "math()"
 snippet PP "Probability" iA
 \textnormal{P}}
 endsnippet
+
 
 context "math()"
 snippet E[ "Expectation" iA
@@ -496,30 +503,36 @@ E \left[ ${1:} \right] ${2:}
 endsnippet
 
 
+
 context "math()"
 snippet e[ "Expectation" iA
 E \left[ ${1:} \right] ${2:}
 endsnippet
+
 
 context "math()"
 snippet V[ "Variance" iA
 V \left[ ${1:} \right] = ${2:}
 endsnippet
 
+
 context "math()"
 snippet var "Variance" iA
 \textnormal{Var}(${1:})
 endsnippet
+
 
 context "math()"
 snippet cov "covariance" iA
 \cov(${1:0}) $0
 endsnippet
 
+
 context "math()"
 snippet core "covariance" w
 \cov(${1:0}) $0
 endsnippet
+
 
 context "math()"
 snippet corr "correlation" w
@@ -529,28 +542,35 @@ endsnippet
 
 ## convergence 
 
+context "math()"
 snippet plim "" wA
 \textnormal{plim} $0
 endsnippet
+
 
 context "math()"
 snippet plimi "" wA
 \underset{n\to \infty}{\textnormal{plim}} \hat{${1:\beta}}_{${2:j} $0
 endsnippet
 
+
 context "math()"
 snippet convd "" w
 \stackrel{d}{\longrightarrow} $0
 endsnippet
+
 
 context "math()"
 snippet convp "" w
 \stackrel{p}{\longrightarrow} $0
 endsnippet
 
+
+context "math()"
 snippet lim "limit" w
 \lim_{${1:n} \to ${2:\infty}} 
 endsnippet
+
 
 context "math()"
 snippet conv "" w
@@ -559,55 +579,42 @@ endsnippet
 
 # distributions
 
+
 context "math()"
 snippet logD "Logistic distribution" iA
 \mathrm{Logistic}(${1:},\,${2:})
 endsnippet
+
 
 context "math()"
 snippet berD "Bernoulli distribution" iA
 \mathrm{Bernoulli}(${1:})
 endsnippet
 
+
 context "math()"
 snippet uniD "Uniform distribution" iA
 \mathrm{U}(${1:},\,${2:})
 endsnippet
-context "math()"
 
+
+context "math()"
 snippet binomial "Binomial distribution" iA
 \mathrm{Binomial}(${1:},\,${2:})
 endsnippet
+
 
 context "math()"
 snippet multinomial "Multinomial distribution" iA
 \mathrm{Multinomial}(${1:},\,${2:})
 endsnippet
 
-context "math()"
-snippet cauchy "Cauchy distribution" iA
-\text{Cauchy}(${1:},\,${2:})
-endsnippet
-
-context "math()"
-snippet invchisqnot "Inverse Chi-squared distribution" iA
-\text{Inv}\chi^2(${1:})
-endsnippet
 
 context "math()"
 snippet chis "Chi-squared distribution" iA
 \chi^2_{${1:}}
 endsnippet
 
-context "math()"
-snippet ncchisq "Non-central Chi-squared distribution" iA
-\chi^2_{${1:}}(${2:})
-endsnippet
-
-context "math()"
-snippet ncF "Non-central F distribution" iA
-F_{${1:},${2:}}(${3:})
-endsnippet
 
 context "math()"
 snippet Fnot "F distribution" iA
@@ -616,10 +623,12 @@ endsnippet
 
 # subscripts 
 
+
 context "math()"
 snippet '([A-Za-z])(\d)' "auto subscript" wrA
 `!p snip.rv = match.group(1)`_`!p snip.rv = match.group(2)`
 endsnippet
+
 
 context "math()"
 snippet '([A-Za-z])_(\d\d)' "auto subscript2" wrA
@@ -627,116 +636,54 @@ snippet '([A-Za-z])_(\d\d)' "auto subscript2" wrA
 endsnippet
 
 
+
 context "math()"
 snippet xnn "xn" iA
 x_{n}
 endsnippet
 
-context "math()"
-snippet ynn "yn" iA
-y_{n}
-endsnippet
 
-context "math()"
-snippet znn "yn" iA
-z_{n}
-endsnippet
-
-context "math()"
-snippet xii "xi" iA
-x_{i}
-endsnippet
-
-context "math()"
-snippet yii "yi" iA
-y_{i}
-endsnippet
-
-context "math()"
-snippet zii "zi" iA
-z_{i}
-endsnippet
-
-context "math()"
-snippet Xii "Xi" iA
-X_{i}
-endsnippet
-
-context "math()"
-snippet Xjj "Xj" iA
-X_{j}
-endsnippet
-
-context "math()"
-snippet Yii "Yi" iA
-Y_{i}
-endsnippet
-
-context "math()"
-snippet Yjj "Yj" iA
-Y_{j}
-endsnippet
-
-context "math()"
-snippet xjj "xj" iA
-x_{j}
-endsnippet
-
-context "math()"
-snippet yjj "yj" iA
-y_{j}
-endsnippet
-
-context "math()"
-snippet zjj "yj" iA
-z_{j}
-endsnippet
-
-context "math()"
-snippet xtt "xj" iA
-x_{t}
-endsnippet
-
-context "math()"
-snippet ytt "yj" iA
-y_{t}
-endsnippet
-
-context "math()"
-snippet ztt "yj" iA
-z_{t}
-endsnippet
 
 context "math()"
 snippet xp1 "x" iA
 x_{t+1}
 endsnippet
 
+
 context "math()"
 snippet p1. "x" iA
 _{t+1}
 endsnippet
 
+
 context "math()"
 snippet tt1 "x" iA
 _{t|t+1}
 endsnippet
+snippet @a "alpha" iA
+\alpha
+endsnippet
+
 
 context "math()"
 snippet yp1 "x" iA
 y_{t+1}
 endsnippet
 
+
 context "math()"
 snippet xm1 "x" iA
 x_{t-1}
 endsnippet
+
 
 context "math()"
 snippet ym1 "x" iA
 y_{t-1}
 endsnippet
 
+
+context "math()"
 snippet R0+ "R0+" iA
 \\R_0^+
 endsnippet
@@ -744,132 +691,153 @@ endsnippet
 # Greek letters
 
 # alpha
+
 context "math()"
 snippet @a "alpha" iA
 \alpha
 endsnippet
 
 # beta
+
 context "math()"
 snippet @b "beta" iA
 \beta
 endsnippet
 
 # delta (lowercase)
+
 context "math()"
 snippet @d "delta" iA
 \delta
 endsnippet
 
 # Delta (uppercase)
+
 context "math()"
 snippet @D "Delta" iA
 \Delta
 endsnippet
 
 # epsilon
+
 context "math()"
 snippet @e "epsilon" iA
 \epsilon
 endsnippet
 
 # gamma
+
 context "math()"
 snippet @g "gamma" iA
 \gamma
 endsnippet
 
 # sigma with specific notation
+
 context "math()"
 snippet @s "sigma sr" iA
 \sigma^${1:2}$0
 endsnippet
 
 # Sigma with specific notation
+
 context "math()"
 snippet @S "Sigma t+1 squared" iA
 \Sigma
 endsnippet
 
 # theta (lowercase)
+
 context "math()"
 snippet @t "theta" iA
 \theta
 endsnippet
 
 # Theta (uppercase)
+
 context "math()"
 snippet @T "Theta" iA
 \Theta
 endsnippet
 
 # lambda
+
 context "math()"
 snippet @l "lambda" iA
 \lambda
 endsnippet
 
 # omega
+
 context "math()"
 snippet @o "omega" iA
 \omega
 endsnippet
 
-# mu (first occurrence)
+# mu 
+
 context "math()"
 snippet mu "mu" iA
 \mu
 endsnippet
 
-# rho (first occurrence)
+# rho 
+
 context "math()"
 snippet @r "rho" iA
 \rho
 endsnippet
 
 # pi
+
 context "math()"
 snippet pi "pi" iA
 \pi
 endsnippet
 
 # psi
+
 context "math()"
 snippet psi "psi" iA
 \psi
 endsnippet
 
 # phi
+
 context "math()"
 snippet phi "phi" iA
 \phi
 endsnippet
 
 # tau
+
 context "math()"
 snippet tau "tau" iA
 \tau
 endsnippet
 
 # chi
+
 context "math()"
 snippet chii "chi" iA
 \chi
 endsnippet
 
 # eta
-# context "math()"
+# 
 # snippet eta "eta" iA
 # \eta 
 # endsnippet
 
 # nu
+
 context "math()"
 snippet nu "nu" iA
 \nu 
 endsnippet
 
 # iota
+
 context "math()"
 snippet @i "iota" iA
 \iota
@@ -882,25 +850,30 @@ snippet @X "Xi" iA
 \xi
 endsnippet
 
+
 context "math()"
 snippet @z "zeta" iA
 \zeta
 endsnippet
+
 
 context "math()"
 snippet @k "kappa" iA
 \kappa
 endsnippet
 
+
 context "math()"
 snippet @K "Kappa" iA
 \Kappa
 endsnippet
 
+
 context "math()"
 snippet @u "Upsilon" iA
 \Upsilon
 endsnippet
+
 
 context "math()"
 snippet @P "Phi" iA
@@ -908,9 +881,8 @@ snippet @P "Phi" iA
 endsnippet
 
 
-
-
 # sequences 
+
 
 
 context "math()"
@@ -918,58 +890,72 @@ snippet x.k "" iA
 ${1:x}_1 \ldots, $1_j
 endsnippet
 
+
 context "math()"
 snippet j.k "j = 1, ..., J" iA
 ${1:j} = ${2:1}, \ldots, ${3:J}
 endsnippet
+
 
 context "math()"
 snippet bhat "beta hat " iA
 \widehat{\beta}_{${1:}} $2
 endsnippet
 
+
 context "math()"
 snippet yhat "y hat " iA
 \widehat{y}_{${1:}} $2
 endsnippet
+
 
 context "math()"
 snippet lhat "lambda hat" iA
 \widehat{\lambda}_{${1:}} $2
 endsnippet
 
+
 context "math()"
 snippet shat "sigma hat" iA
 \widehat{\sigma}_{${1:}} $2
 endsnippet
+
 
 context "math()"
 snippet btil "b tilde" iA
 \tilde{\beta}_{${1:}} $2
 endsnippet
 
+
 context "math()"
 snippet ytil "y tilde" iA
 \tilde{y}_{${1:}} $2
 endsnippet
+
 
 context "math()"
 snippet xtil "x tilde" iA
 \tilde{x}_{${1:}} $2
 endsnippet
 
+
 context "math()"
 snippet ytil "X tilde" iA
 \tilde{X}_{${1:}} $2
 endsnippet
 
+
+context "math()"
 snippet bhseq "" iA
 $\hat{\beta}_{0},  \ldots, \hat{\beta}_{k}$
 endsnippet
 
+
+context "math()"
 snippet bseqq "" iA
 ${\beta}_{0}, \ldots, {\beta}_{k}$
 endsnippet
+
 
 context "math()"
 snippet forall "for all j = 1, ..., J" iA
@@ -983,15 +969,18 @@ snippet '(?<!\\)(arcsin|arccos|arctan|arccot|arccsc|arcsec|pi|zeta|int)' "ln" rw
 endsnippet
 
 
+
 context "math()"
 snippet '([A-Za-z])tt' "auto subscript _t" wrA
 `!p snip.rv = match.group(1)`_t
 endsnippet
 
+
 context "math()"
 snippet '([A-Za-z])ii' "auto subscript _i" wrA
 `!p snip.rv = match.group(1)`_i
 endsnippet
+
 
 context "math()"
 snippet '([A-Za-z])jj' "auto subscript _j" wrA
@@ -1013,65 +1002,84 @@ snippet <-> "leftrightarrow" iA
 \leftrightarrow
 endsnippet
 
+
 context "math()"
 snippet undbr "" wA
 \underbrace{${1:}}_{${2:}}
 endsnippet
+
 
 context "math()"
 snippet inv "inverse" iA
 ^{-1}
 endsnippet
 
+
+context "math()"
 snippet >> ">>" iA
 \gg
 endsnippet
 
+
+context "math()"
 snippet << "<<" iA
 \ll
 endsnippet
 
+
+context "math()"
 snippet ~# "~" iA
 \sim 
 endsnippet
 
+
+context "math()"
 snippet ~~ "~" iA
 \approx
 endsnippet
+
 
 snippet OO "emptyset" iA
 \O
 endsnippet
 
+
 snippet RR "real" iA
 \R
 endsnippet
+
 
 snippet LLL "lag" iA
 \ensuremath{\mathcal{L}}
 endsnippet
 
+
 snippet lll "lag" iA
 \ensuremath{\ell}
 endsnippet
+
 
 snippet fff "calographic f" iA
 \ensuremath{\mathcal{f}}
 endsnippet
 
+
 snippet FF "cal F" iA
 \ensuremath{\mathcal{F}}
 endsnippet
 
+
 snippet QQ "Q" iA
 \Q
 endsnippet
+
 
 snippet ZZ "Z" iA
 \Z
 endsnippet
 
 
+context "math()"
 snippet cvec "column vector" iA
 \begin{pmatrix} ${1:x}_${2:1}\\\\ \vdots\\\\ $1_${2:n} \end{pmatrix}
 endsnippet
@@ -1100,7 +1108,6 @@ snippet "([a-zA-Z])dot" "dot" riA
 \dot{`!p snip.rv=match.group(1)`}
 endsnippet
 
-
 priority 10
 context "math()"
 snippet "hat" "hat" riA
@@ -1127,7 +1134,7 @@ endsnippet
 
 ## misc snippets
 
-context "math()"
+
 snippet tq " text input" iA
 \text{${1:}} 
 endsnippet
@@ -1144,56 +1151,6 @@ priority 100
 snippet .. "ldots" iA
 \ldots
 endsnippet
-
-
-# spelling
-
-snippet eqm "eqm" A
-equilibrium
-endsnippet
-
-snippet LLN "law large numbers" A
-Law of Large Numbers
-endsnippet
-
-snippet asymp "asymp" A
-asymptotically
-endsnippet
-
-# sections 
-
-snippet Sc "Section" b
-\section{${1:section name}}
-
-${0}
-endsnippet
-
-snippet Sub "Subsection" b
-\subsection{${1:subsection name}}
-
-${0}
-endsnippet
-
-snippet Ssub "Subsubsection" b
-\subsubsection{${1:subsubsection name}}
-
-${0}
-endsnippet
-
-snippet Par "Paragraph" b
-\paragraph{${1:paragraph name}}
-
-${0}
-endsnippet
-
-snippet Subp "Subparagraph" b
-\subparagraph{${1:subparagraph name}}
-
-${0}
-endsnippet
-
-
-
 
 
 
