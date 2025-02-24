@@ -15,15 +15,6 @@ return {
             })
         end,
     },
-
-  {
-    'nvim-neorg/neorg',
-    enabled = false,
-    config = function()
-      require('neorg').setup {}
-    end,
-  },
-
   {
     'jakewvincent/mkdnflow.nvim',
     enabled = false,
@@ -37,7 +28,7 @@ return {
   -- enabled = false, 
   version = "*", -- recommended, use latest release instead of latest commit
   lazy = true,
-  ft = "markdown",
+  ft = { "markdown", "quarto" },
   -- Replace the above line with this if you only want to load obsidian.nvim for markdown files in your vault:
   -- event = {
   --   -- If you want to use the home shortcut '~', here you need to call 'vim.fn.expand'.
@@ -55,20 +46,20 @@ return {
 
     -- see below for full list of optional dependencies 👇
   },
+  config = function(_, opts)
+      -- Setup obsidian.nvim
+      require("obsidian").setup(opts)
+    end, 
   opts = {
     workspaces = {
       {
         name = "Digital Garden",
-        path = "/Users/user/vault",
+        path = "/Users/user/repos/quartz/content",
       },
-      -- {	
-      --   name = "public",
-      --   path = "/Users/user/repos/quartz/quartz-public/content",
-      -- },
 		},
     -- see below for full list of options 👇
     daily_notes = {
-      -- folder = "daily_notes",
+      folder = "daily/",
     },
     completion = {
         -- Set to false to disable completion.
@@ -177,7 +168,7 @@ disable_frontmatter = false,
 -- Optional, alternatively you can customize the frontmatter data.
 ---@return table
 note_frontmatter_func = function(note)
-  -- Add the title of the note as an alias.
+  -- Add the title of the note as an alias if it exists
   if note.title then
     note:add_alias(note.title)
   end
@@ -187,9 +178,13 @@ note_frontmatter_func = function(note)
   -- Get the seconds from the timestamp tables
   local current_time = (file_info and file_info.mtime and file_info.mtime.sec) or os.time()
 
-  -- Initialize with core fields first
+  -- Create a normalized title from the ID
+  local normalized_title = note.id:gsub("-", " "):gsub("^%l", string.upper):gsub("%s%l", string.upper)
+
+  -- Initialize with core fields
   local out = {
     id = note.id,
+    title = normalized_title,  -- Add the normalized title here
     aliases = note.aliases,
     tags = note.tags,
     draft = true
@@ -212,10 +207,12 @@ note_frontmatter_func = function(note)
   end
 
   -- Always update Last Date
-  out["Last Date"] = os.date("%Y-%m-%d", current_time)
+  out["Last Date"] = os.date("%Y-%m-%dT%H", current_time)
 
   return out
-end,  -- Optional, by default when you use `:ObsidianFollowLink` on a link to an external
+end,
+
+  -- Optional, by default when you use `:ObsidianFollowLink` on a link to an external
   -- URL it will be ignored but you can customize this behavior here.
   -- @param url string
   -- follow_url_func = function(url)
@@ -256,30 +253,31 @@ end,  -- Optional, by default when you use `:ObsidianFollowLink` on a link to an
   -- },
 
   -- Specify how to handle attachments.
-  attachments = {
-    -- The default folder to place images in via `:ObsidianPasteImg`.
-    -- If this is a relative path it will be interpreted as relative to the vault root.
-    -- You can always override this per image by passing a full path to the command instead of just a filename.
-    img_folder = "assets/imgs",  -- This is the default
+ 
+attachments = {
+    img_folder = function()
+        -- Get the absolute path of the current file
+        local current_file_path = vim.fn.expand('%:p:h')
 
-    -- Optional, customize the default name or prefix when pasting images via `:ObsidianPasteImg`.
-    ---@return string
+        -- Ensure it's within the vault by making it relative to the vault root
+        local vault_root = require("obsidian").client().vault_path
+        if vim.startswith(current_file_path, vault_root) then
+            return vim.fn.fnamemodify(current_file_path, ':.')
+        else
+            return "attachments" -- Fallback in case something goes wrong
+        end
+    end,
+
     img_name_func = function()
-      -- Prefix image names with timestamp.
-      return string.format("%s-", os.time())
+        return string.format("%s-", os.time())
     end,
 
-    -- A function that determines the text to insert in the note when pasting an image.
-    -- It takes two arguments, the `obsidian.Client` and an `obsidian.Path` to the image file.
-    -- This is the default implementation.
-    ---@param client obsidian.Client
-    ---@param path obsidian.Path the absolute path to the image file
-    ---@return string
     img_text_func = function(client, path)
-      path = client:vault_relative_path(path) or path
-      return string.format("![%s](%s)", path.name, path)
+        path = client:vault_relative_path(path) or path
+        return string.format("![%s](%s)", path.name, path)
     end,
-  }
+}
+
 },
 },
 }

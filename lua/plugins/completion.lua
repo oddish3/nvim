@@ -1,11 +1,4 @@
 return {
-  {
-    'windwp/nvim-autopairs',
-    config = function()
-      require('nvim-autopairs').setup {}
-      require('nvim-autopairs').remove_rule '`'
-    end,
-  },
 {
         "jalvesaq/zotcite",
     lazy = false,
@@ -22,16 +15,19 @@ return {
     },
   { -- completion
     'hrsh7th/nvim-cmp',
+    -- enabled = false,
     event = 'InsertEnter',
     dependencies = {
 {
     "gaoDean/autolist.nvim",
+    -- enabled = false,
     ft = {
         "markdown",
         "text",
         "tex",
         "plaintex",
         "norg",
+        "quarto"
     },
     config = function()
         require("autolist").setup()
@@ -43,7 +39,7 @@ return {
         vim.keymap.set("n", "o", "o<cmd>AutolistNewBullet<cr>")
         vim.keymap.set("n", "O", "O<cmd>AutolistNewBulletBefore<cr>")
         vim.keymap.set("n", "<CR>", "<cmd>AutolistToggleCheckbox<cr><CR>")
-        vim.keymap.set("n", "<C-r>", "<cmd>AutolistRecalculate<cr>")
+        -- vim.keymap.set("n", "<C-r>", "<cmd>AutolistRecalculate<cr>")
 
         -- cycle list types with dot-repeat
         vim.keymap.set("n", "<leader>cn", require("autolist").cycle_next_dr, { expr = true })
@@ -60,31 +56,17 @@ return {
         vim.keymap.set("v", "d", "d<cmd>AutolistRecalculate<cr>")
     end,
   },
-{
-      "windwp/nvim-autopairs",
-        enabled = false,
-      opts = { fast_wrap = {}, disable_filetype = { "TelescopePrompt", "vim" } },
-      config = function(_, opts)
-        require("nvim-autopairs").setup(opts)
-        local cmp_autopairs = require("nvim-autopairs.completion.cmp")
-        require("cmp").event:on("confirm_done", cmp_autopairs.on_confirm_done())
-      end,
-    },
-      'hrsh7th/cmp-nvim-lsp',
-      'hrsh7th/cmp-nvim-lsp-signature-help',
       'hrsh7th/cmp-path',
-      'hrsh7th/cmp-calc',
-      'hrsh7th/cmp-emoji',
+      -- 'hrsh7th/cmp-calc',
+      -- 'hrsh7th/cmp-emoji',
       'f3fora/cmp-spell',
-      'ray-x/cmp-treesitter',
-      'kdheepak/cmp-latex-symbols',
-      'jmbuhr/cmp-pandoc-references',
+      -- 'ray-x/cmp-treesitter',
+      -- 'kdheepak/cmp-latex-symbols',
       'jalvesaq/cmp-zotcite',
-      'onsails/lspkind-nvim',
-      'jmbuhr/otter.nvim',
       'quangnguyen30192/cmp-nvim-ultisnips',
 {
   "SirVer/ultisnips",
+  lazy = false,
   config = function()
     vim.g.UltiSnipsExpandTrigger = "<tab>"
     vim.g.UltiSnipsJumpForwardTrigger = "<tab>"
@@ -94,7 +76,6 @@ return {
     },
     config = function()
       local cmp = require 'cmp'
-      local lspkind = require 'lspkind'
       require("cmp_nvim_ultisnips").setup{}
       local cmp_ultisnips_mappings = require("cmp_nvim_ultisnips.mappings")
 
@@ -126,41 +107,10 @@ return {
       },
         autocomplete = false,
 
-        ---@diagnostic disable-next-line: missing-fields
-        formatting = {
-          format = lspkind.cmp_format {
-            mode = 'symbol',
-            menu = {
-              otter = '[🦦]',
-              nvim_lsp = '[LSP]',
-              nvim_lsp_signature_help = '[sig]',
-              ultisnip = '[snip]',
-              -- buffer = '[buf]',
-              path = '[path]',
-              spell = '[spell]',
-              pandoc_references = '[ref]',
-              tags = '[tag]',
-              treesitter = '[TS]',
-              calc = '[calc]',
-              latex_symbols = '[tex]',
-              emoji = '[emoji]',
-            },
-          },
-        },
         sources = {
-          { name = 'otter' }, -- for code chunks in quarto
           { name = 'path' },
-          { name = 'nvim_lsp_signature_help' },
-          { name = 'nvim_lsp' },
           { name = 'ultisnips', keyword_length = 3, max_item_count = 3 },
           { name = "cmp_zotcite" },
-          { name = 'pandoc_references' },
-          -- { name = 'buffer', keyword_length = 5, max_item_count = 3 },
-          -- { name = 'spell' },
-          { name = 'treesitter', keyword_length = 5, max_item_count = 3 },
-          { name = 'calc' },
-          { name = 'latex_symbols' },
-          { name = 'emoji' },
         },
         view = {
           entries = 'native',

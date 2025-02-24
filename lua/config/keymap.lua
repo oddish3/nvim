@@ -46,84 +46,9 @@ nmap('<S-Right>', '<cmd>vertical resize +2<CR>')
 imap(',', ',<c-g>u')
 imap('.', '.<c-g>u')
 imap(';', ';<c-g>u')
-
 nmap('Q', '<Nop>')
 
---- Send code to terminal with vim-slime
---- If an R terminal has been opend, this is in r_mode
---- and will handle python code via reticulate when sent
---- from a python chunk.
---- TODO: incorpoarate this into quarto-nvim plugin
---- such that QuartoRun functions get the same capabilities
---- TODO: figure out bracketed paste for reticulate python repl.
-local function send_cell()
-  if vim.b['quarto_is_r_mode'] == nil then
-    vim.fn['slime#send_cell']()
-    return
-  end
-  if vim.b['quarto_is_r_mode'] == true then
-    vim.g.slime_python_ipython = 0
-    local is_python = require('otter.tools.functions').is_otter_language_context 'python'
-    if is_python and not vim.b['reticulate_running'] then
-      vim.fn['slime#send']('reticulate::repl_python()' .. '\r')
-      vim.b['reticulate_running'] = true
-    end
-    if not is_python and vim.b['reticulate_running'] then
-      vim.fn['slime#send']('exit' .. '\r')
-      vim.b['reticulate_running'] = false
-    end
-    vim.fn['slime#send_cell']()
-  end
-end
 
---- Send code to terminal with vim-slime
---- If an R terminal has been opend, this is in r_mode
---- and will handle python code via reticulate when sent
---- from a python chunk.
-local slime_send_region_cmd = ':<C-u>call slime#send_op(visualmode(), 1)<CR>'
-slime_send_region_cmd = vim.api.nvim_replace_termcodes(slime_send_region_cmd, true, false, true)
-local function send_region()
-  -- if filetyps is not quarto, just send_region
-  if vim.bo.filetype ~= 'quarto' or vim.b['quarto_is_r_mode'] == nil then
-    vim.cmd('normal' .. slime_send_region_cmd)
-    return
-  end
-  if vim.b['quarto_is_r_mode'] == true then
-    vim.g.slime_python_ipython = 0
-    local is_python = require('otter.tools.functions').is_otter_language_context 'python'
-    if is_python and not vim.b['reticulate_running'] then
-      vim.fn['slime#send']('reticulate::repl_python()' .. '\r')
-      vim.b['reticulate_running'] = true
-    end
-    if not is_python and vim.b['reticulate_running'] then
-      vim.fn['slime#send']('exit' .. '\r')
-      vim.b['reticulate_running'] = false
-    end
-    vim.cmd('normal' .. slime_send_region_cmd)
-  end
-end
-
--- send code with ctrl+Enter
--- just like in e.g. RStudio
--- needs kitty (or other terminal) config:
--- map shift+enter send_text all \x1b[13;2u
--- map ctrl+enter send_text all \x1b[13;5u
-nmap('<c-cr>', send_cell)
-nmap('<s-cr>', send_cell)
-imap('<c-cr>', send_cell)
-imap('<s-cr>', send_cell)
-
---- Show R dataframe in the browser
--- might not use what you think should be your default web browser
--- because it is a plain html file, not a link
--- see https://askubuntu.com/a/864698 for places to look for
-local function show_r_table()
-  local node = vim.treesitter.get_node { ignore_injections = false }
-  assert(node, 'no symbol found under cursor')
-  local text = vim.treesitter.get_node_text(node, 0)
-  local cmd = [[call slime#send("DT::datatable(]] .. text .. [[)" . "\r")]]
-  vim.cmd(cmd)
-end
 
 -- keep selection after indent/dedent
 vmap('>', '>gv')
@@ -150,53 +75,6 @@ local function toggle_light_dark_theme()
   end
 end
 
-local is_code_chunk = function()
-  local current, _ = require('otter.keeper').get_current_language_context()
-  if current then
-    return true
-  else
-    return false
-  end
-end
-
---- Insert code chunk of given language
---- Splits current chunk if already within a chunk
---- @param lang string
-local insert_code_chunk = function(lang)
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<esc>', true, false, true), 'n', true)
-  local keys
-  if is_code_chunk() then
-    keys = [[o```<cr><cr>```{]] .. lang .. [[}<esc>o]]
-  else
-    keys = [[o```{]] .. lang .. [[}<cr>```<esc>O]]
-  end
-  keys = vim.api.nvim_replace_termcodes(keys, true, false, true)
-  vim.api.nvim_feedkeys(keys, 'n', false)
-end
-
-local insert_r_chunk = function()
-  insert_code_chunk 'r'
-end
-
-local insert_py_chunk = function()
-  insert_code_chunk 'python'
-end
-
-local insert_lua_chunk = function()
-  insert_code_chunk 'lua'
-end
-
-local insert_julia_chunk = function()
-  insert_code_chunk 'julia'
-end
-
-local insert_bash_chunk = function()
-  insert_code_chunk 'bash'
-end
-
-local insert_ojs_chunk = function()
-  insert_code_chunk 'ojs'
-end
 
 --show kepbindings with whichkey
 --add your own here if you want them to
@@ -206,10 +84,7 @@ end
 wk.add({
     { "<c-LeftMouse>", "<cmd>lua vim.lsp.buf.definition()<CR>", desc = "go to definition" },
     { "<c-q>", "<cmd>q<cr>", desc = "close buffer" },
-    { "<cm-i>", insert_py_chunk, desc = "python code chunk" },
     { "<esc>", "<cmd>noh<cr>", desc = "remove search highlight" },
-    { "<m-I>", insert_py_chunk, desc = "python code chunk" },
-    { "<m-i>", insert_r_chunk, desc = "r code chunk" },
     { "[q", ":silent cprev<cr>", desc = "[q]uickfix prev" },
     { "]q", ":silent cnext<cr>", desc = "[q]uickfix next" },
     { "gN", "Nzzzv", desc = "center search" },
@@ -227,7 +102,6 @@ wk.add({
       { ".", ":norm .<cr>", desc = "repat last normal mode command" },
       { "<M-j>", ":m'>+<cr>`<my`>mzgv`yo`z", desc = "move line down" },
       { "<M-k>", ":m'<-2<cr>`>my`<mzgv`yo`z", desc = "move line up" },
-      { "<cr>", send_region, desc = "run code region" },
       { "q", ":norm @q<cr>", desc = "repat q macro" },
     },
 })
@@ -243,146 +117,96 @@ wk.add({
     {
       mode = { "i" },
       { "<c-x><c-x>", "<c-x><c-o>", desc = "omnifunc completion" },
-      { "<cm-i>", insert_py_chunk, desc = "python code chunk" },
       { "<m-->", " <- ", desc = "assign" },
-      { "<m-I>", insert_py_chunk, desc = "python code chunk" },
-      { "<m-i>", insert_r_chunk, desc = "r code chunk" },
       { "<m-m>", " |>", desc = "pipe" },
     },
 }, { mode = 'i' })
 
 local function new_terminal(lang)
-  vim.cmd('vsplit term://' .. lang)
+  vim.cmd('split term://' .. lang)
+  -- Optional: if you want to set a specific height
+  vim.cmd('resize 10')  -- adjust 15 to whatever height you prefer
+  -- Optional: to keep the height fixed
+  vim.cmd('set winfixheight')
 end
 
-local function new_terminal_python()
-  new_terminal 'python'
-end
-
-local function new_terminal_r()
-  new_terminal 'R --no-save'
-end
-
-local function new_terminal_ipython()
-  new_terminal 'ipython --no-confirm-exit'
-end
-
-local function new_terminal_julia()
-  new_terminal 'julia'
-end
 
 local function new_terminal_shell()
   new_terminal '$SHELL'
 end
 
-local function get_otter_symbols_lang()
-  local otterkeeper = require'otter.keeper'
-  local main_nr = vim.api.nvim_get_current_buf()
-  local langs = {}
-  for i,l in ipairs(otterkeeper.rafts[main_nr].languages) do
-    langs[i] = i .. ': ' .. l
-  end
-  -- promt to choose one of langs
-  local i = vim.fn.inputlist(langs)
-  local lang = otterkeeper.rafts[main_nr].languages[i]
-  local params = {
-    textDocument = vim.lsp.util.make_text_document_params(),
-    otter = {
-      lang = lang
-    }
-  }
-  -- don't pass a handler, as we want otter to use it's own handlers
-  vim.lsp.buf_request(main_nr, ms.textDocument_documentSymbol, params, nil)
-end
-
-vim.keymap.set("n", "<leader>os", get_otter_symbols_lang, {desc = "otter [s]ymbols"})
-
-
 -- normal mode with <leader>
 wk.add({
   {
-    { "<leader><cr>", send_cell, desc = "run code cell" },
-    { "<leader>c", group = "[c]ode / [c]ell / [c]hunk" },
-    { "<leader>ci", new_terminal_ipython, desc = "new [i]python terminal" },
-    { "<leader>cj", new_terminal_julia, desc = "new [j]ulia terminal" },
-    { "<leader>cn", new_terminal_shell, desc = "[n]ew terminal with shell" },
-    { "<leader>cp", new_terminal_python, desc = "new [p]ython terminal" },
-    { "<leader>cr", new_terminal_r, desc = "new [R] terminal" },
-    { "<leader>d", group = "[d]ebug" },
+    { "<leader>a", group = "[a]nki" },
+    { "<leader>b", group = "[b]uffer" },
+    { "<leader>c", group = "[l]ist" },
     { "<leader>dt", group = "[t]est" },
     { "<leader>e", group = "[e]dit" },
+    { "<leader>n", group = "[n]ew" },
+    { "<leader>s", group = "[s]tata" },
+    { "<leader>t", group = "[t]erminal / file[t]ype" },
     { "<leader>f", group = "[f]ind (telescope)" },
-    { "<leader>f<space>", "<cmd>Telescope buffers<cr>", desc = "[ ] buffers" },
-    { "<leader>fM", "<cmd>Telescope man_pages<cr>", desc = "[M]an pages" },
+    -- { "<leader>f<space>", "<cmd>Telescope buffers<cr>", desc = "[ ] buffers" },
+    -- { "<leader>fM", "<cmd>Telescope man_pages<cr>", desc = "[M]an pages" },
     { "<leader>fb", "<cmd>Telescope current_buffer_fuzzy_find<cr>", desc = "[b]uffer fuzzy find" },
     { "<leader>fc", "<cmd>Telescope git_commits<cr>", desc = "git [c]ommits" },
     { "<leader>fd", "<cmd>Telescope buffers<cr>", desc = "[d] buffers" },
     { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "[f]iles" },
     { "<leader>fg", "<cmd>Telescope live_grep<cr>", desc = "[g]rep" },
-    { "<leader>fh", "<cmd>Telescope help_tags<cr>", desc = "[h]elp" },
-    { "<leader>fj", "<cmd>Telescope jumplist<cr>", desc = "[j]umplist" },
+    -- { "<leader>fh", "<cmd>Telescope help_tags<cr>", desc = "[h]elp" },
+    -- { "<leader>fj", "<cmd>Telescope jumplist<cr>", desc = "[j]umplist" },
     { "<leader>fk", "<cmd>Telescope keymaps<cr>", desc = "[k]eymaps" },
-    { "<leader>fl", "<cmd>Telescope loclist<cr>", desc = "[l]oclist" },
-    { "<leader>fm", "<cmd>Telescope marks<cr>", desc = "[m]arks" },
+    -- { "<leader>fl", "<cmd>Telescope loclist<cr>", desc = "[l]oclist" },
+    -- { "<leader>fm", "<cmd>Telescope marks<cr>", desc = "[m]arks" },
     { "<leader>fq", "<cmd>Telescope quickfix<cr>", desc = "[q]uickfix" },
     { "<leader>g", group = "[g]it" },
     { "<leader>gb", group = "[b]lame" },
-    { "<leader>gbb", ":GitBlameToggle<cr>", desc = "[b]lame toggle virtual text" },
-    { "<leader>gbc", ":GitBlameCopyCommitURL<cr>", desc = "[c]opy" },
-    { "<leader>gbo", ":GitBlameOpenCommitURL<cr>", desc = "[o]pen" },
-    { "<leader>gc", ":GitConflictRefresh<cr>", desc = "[c]onflict" },
-    { "<leader>gd", group = "[d]iff" },
-    { "<leader>gdc", ":DiffviewClose<cr>", desc = "[c]lose" },
-    { "<leader>gdo", ":DiffviewOpen<cr>", desc = "[o]pen" },
-    { "<leader>gs", ":Gitsigns<cr>", desc = "git [s]igns" },
-    { "<leader>gwc", ":lua require('telescope').extensions.git_worktree.create_git_worktree()<cr>", desc = "worktree create" },
-    { "<leader>gws", ":lua require('telescope').extensions.git_worktree.git_worktrees()<cr>", desc = "worktree switch" },
-    { "<leader>h", group = "[h]elp / [h]ide / debug" },
-    { "<leader>hc", group = "[c]onceal" },
-    { "<leader>hch", ":set conceallevel=1<cr>", desc = "[h]ide/conceal" },
-    { "<leader>hcs", ":set conceallevel=0<cr>", desc = "[s]how/unconceal" },
-    { "<leader>ht", group = "[t]reesitter" },
-    { "<leader>htt", vim.treesitter.inspect_tree, desc = "show [t]ree" },
+    -- { "<leader>gbb", ":GitBlameToggle<cr>", desc = "[b]lame toggle virtual text" },
+    -- { "<leader>gbc", ":GitBlameCopyCommitURL<cr>", desc = "[c]opy" },
+    -- { "<leader>gbo", ":GitBlameOpenCommitURL<cr>", desc = "[o]pen" },
+    -- { "<leader>gc", ":GitConflictRefresh<cr>", desc = "[c]onflict" },
+    -- { "<leader>gd", group = "[d]iff" },
+    -- { "<leader>gdc", ":DiffviewClose<cr>", desc = "[c]lose" },
+    -- { "<leader>gdo", ":DiffviewOpen<cr>", desc = "[o]pen" },
+    -- { "<leader>gs", ":Gitsigns<cr>", desc = "git [s]igns" },
+    -- { "<leader>gwc", ":lua require('telescope').extensions.git_worktree.create_git_worktree()<cr>", desc = "worktree create" },
+    -- { "<leader>gws", ":lua require('telescope').extensions.git_worktree.git_worktrees()<cr>", desc = "worktree switch" },
+    -- { "<leader>h", group = "[h]elp / [h]ide / debug" },
+    -- { "<leader>hc", group = "[c]onceal" },
+    -- { "<leader>hch", ":set conceallevel=1<cr>", desc = "[h]ide/conceal" },
+    -- { "<leader>hcs", ":set conceallevel=0<cr>", desc = "[s]how/unconceal" },
+    -- { "<leader>ht", group = "[t]reesitter" },
+    -- { "<leader>htt", vim.treesitter.inspect_tree, desc = "show [t]ree" },
     { "<leader>i", group = "[i]mage" },
-    { "<leader>l", group = "[l]anguage/lsp" },
-    { "<leader>la", vim.lsp.buf.code_action, desc = "code [a]ction" },
-    { "<leader>ld", group = "[d]iagnostics" },
-    { "<leader>ldd", function() vim.diagnostic.enable(false) end, desc = "[d]isable" },
-    { "<leader>lde", vim.diagnostic.enable, desc = "[e]nable" },
-    { "<leader>le", vim.diagnostic.open_float, desc = "diagnostics (show hover [e]rror)" },
-    { "<leader>lg", ":Neogen<cr>", desc = "neo[g]en docstring" },
-    { "<leader>o", group = "[o]tter & c[o]de" },
-    { "<leader>oa", require'otter'.activate, desc = "otter [a]ctivate" },
-    { "<leader>ob", insert_bash_chunk, desc = "[b]ash code chunk" },
-    { "<leader>oc", "O# %%<cr>", desc = "magic [c]omment code chunk # %%" },
-    { "<leader>od", require'otter'.activate, desc = "otter [d]eactivate" },
-    { "<leader>oj", insert_julia_chunk, desc = "[j]ulia code chunk" },
-    { "<leader>ol", insert_lua_chunk, desc = "[l]lua code chunk" },
-    { "<leader>oo", insert_ojs_chunk, desc = "[o]bservable js code chunk" },
-    { "<leader>op", insert_py_chunk, desc = "[p]ython code chunk" },
-    { "<leader>or", insert_r_chunk, desc = "[r] code chunk" },
-    { "<leader>q", group = "[q]uarto" },
-    { "<leader>qE", function() require('otter').export(true) end, desc = "[E]xport with overwrite" },
-    { "<leader>qa", ":QuartoActivate<cr>", desc = "[a]ctivate" },
-    { "<leader>qe", require('otter').export, desc = "[e]xport" },
-    { "<leader>qh", ":QuartoHelp ", desc = "[h]elp" },
-    { "<leader>qp", ":lua require'quarto'.quartoPreview()<cr>", desc = "[p]review" },
-    { "<leader>qq", ":lua require'quarto'.quartoClosePreview()<cr>", desc = "[q]uiet preview" },
-    { "<leader>qr", group = "[r]un" },
-    { "<leader>qra", ":QuartoSendAll<cr>", desc = "run [a]ll" },
-    { "<leader>qrb", ":QuartoSendBelow<cr>", desc = "run [b]elow" },
-    { "<leader>qrr", ":QuartoSendAbove<cr>", desc = "to cu[r]sor" },
-    { "<leader>r", group = "[r] R specific tools" },
-    { "<leader>rt", show_r_table, desc = "show [t]able" },
+    { "<leader>l", group = "[l]anguage" },
+    -- { "<leader>ld", group = "[d]iagnostics" },
+    -- { "<leader>ldd", function() vim.diagnostic.enable(false) end, desc = "[d]isable" },
+    -- { "<leader>lde", vim.diagnostic.enable, desc = "[e]nable" },
+    -- { "<leader>le", vim.diagnostic.open_float, desc = "diagnostics (show hover [e]rror)" },
+    -- { "<leader>lg", ":Neogen<cr>", desc = "neo[g]en docstring" },
+    -- { "<leader>o", group = "[o]tter & c[o]de" },
+    -- { "<leader>q", group = "[q]uarto" },
+    -- { "<leader>qa", ":QuartoActivate<cr>", desc = "[a]ctivate" },
+    -- { "<leader>qh", ":QuartoHelp ", desc = "[h]elp" },
+    -- { "<leader>qp", ":lua require'quarto'.quartoPreview()<cr>", desc = "[p]review" },
+    -- { "<leader>qq", ":lua require'quarto'.quartoClosePreview()<cr>", desc = "[q]uiet preview" },
+    -- { "<leader>qr", group = "[r]un" },
+    -- { "<leader>qra", ":QuartoSendAll<cr>", desc = "run [a]ll" },
+    -- { "<leader>qrb", ":QuartoSendBelow<cr>", desc = "run [b]elow" },
+    -- { "<leader>qrr", ":QuartoSendAbove<cr>", desc = "to cu[r]sor" },
+    -- { "<leader>r", group = "[r] R specific tools" },
+    -- { "<leader>rt", show_r_table, desc = "show [t]able" },
     { "<leader>v", group = "[v]im" },
     { "<leader>vc", ":Telescope colorscheme<cr>", desc = "[c]olortheme" },
-    { "<leader>vh", ':execute "h " . expand("<cword>")<cr>', desc = "vim [h]elp for current word" },
+    -- { "<leader>vh", ':execute "h " . expand("<cword>")<cr>', desc = "vim [h]elp for current word" },
     { "<leader>vl", ":Lazy<cr>", desc = "[l]azy package manager" },
-    { "<leader>vm", ":Mason<cr>", desc = "[m]ason software installer" },
+    -- { "<leader>vm", ":Mason<cr>", desc = "[m]ason software installer" },
     { "<leader>vs", ":e $MYVIMRC | :cd %:p:h | split . | wincmd k<cr>", desc = "[s]ettings, edit vimrc" },
     { "<leader>vt", toggle_light_dark_theme, desc = "[t]oggle light/dark theme" },
     { "<leader>x", group = "e[x]ecute" },
     { "<leader>xx", ":w<cr>:source %<cr>", desc = "[x] source %" },
+    { "<leader>z", group = "[z]otero" },
   }
 }, { mode = 'n'})
 
@@ -410,50 +234,83 @@ wk.add({
     "<leader>pp", "<cmd>TermExec cmd='pandoc %:p -o %:p:r.pdf' open=0<CR>", desc = "[p]df"
   },
   {
-    "<leader>pi", "<cmd>TermExec cmd='source ~/.config/nvim/venv/bin/activate.fish && " ..
-      "pandoc %:p -t markdown --wrap=none -o %:p:r.md && " ..
-      "sentence-splitter %:p:r.md %:p:r_split.md'<CR>", 
-      desc = "[i]mport docx + split"
-  },
-  {
-    "<leader>pz", "<cmd>TermExec cmd='source ~/.config/nvim/venv/bin/activate.fish && " ..
-      "pandoc %:p -s -o %:p:r.docx -F ~/.local/share/nvim-text/lazy/zotcite/python3/zotref.py --citep'<CR>", 
-      desc = "[z]otcite export"
-  },
+  "<leader>pi", "<cmd>TermExec cmd='source /Users/user/venv/bin/activate.fish && " ..
+    "pandoc %:p -t markdown --wrap=none -o %:p:r.md && " ..
+    "sentence-splitter %:p:r.md %:p:r_split.md'<CR>", 
+  desc = "[i]mport docx + split"
+},
 {
-  "<leader>pv", ":terminal source ~/.config/nvim/venv/bin/activate.fish && " ..
-    "pandoc %:p -s -o %:p:r.docx -F ~/.local/share/nvim-text/lazy/zotcite/python3/zotref.py --citep --csl /Users/user/Downloads/vancouver.csl<CR>",
+  "<leader>pz", "<cmd>TermExec cmd='source /Users/user/venv/bin/activate.fish && " ..
+    "pandoc %:p -s -o %:p:r.docx -F /Users/user/.local/share/nvim/lazy/zotcite/python3/zotref.py --citep'<CR>", 
+  desc = "[z]otcite export"
+},
+{
+  "<leader>pv", "<cmd>TermExec cmd='source /Users/user/venv/bin/activate.fish && " ..
+    "pandoc %:p -s -o %:p:r.docx -F /Users/user/.local/share/nvim/lazy/zotcite/python3/zotref.py --citep --csl /Users/user/Zotero/styles/vancouver-brackets-only-year-no-issue.csl'<CR>", 
   desc = "[v]ancouver export"
-}
-,
+},
 }, { mode = 'n' })
 
-local map = vim.keymap.set
-map("n", "<leader>fo", function()
-    require('telescope.builtin').oldfiles({
-        no_ignore = true
-        -- hidden = true
-    })
-end, { desc = "telescope find all oldfiles (including ignored)" })
 
--- For regular find_files, you can create a similar function with more options
-map("n", "<leader>ff", function()
-    require('telescope.builtin').find_files({
-        -- Default behavior, but you can add more options if needed
-        no_ignore = true
-        -- hidden = true
-    })
-end, { desc = "telescope find files" })
+-- quartz
+-- Load the ToggleTerm module
+local Terminal = require("toggleterm.terminal").Terminal
 
--- Your existing all files mapping remains the same
-map("n", "<leader>fa", function()
-    require('telescope.builtin').find_files({
-        follow = true,
-        no_ignore = true,
-        -- hidden = true,
-        no_ignore_parent = true
-    })
-end, { desc = "telescope find all files (including ignored)" })
+-- Define the command for Quartz preview mode
+local quartz_preview = Terminal:new({
+  cmd = "export QUARTZ_MODE=preview && npx quartz build --serve --verbose --bundleInfo", -- Prepend export command
+  hidden = false,
+  direction = "horizontal",
+  size = 10,
+  on_open = function(term)
+    vim.cmd("startinsert!")
+  end,
+  on_close = function(term)
+    -- Optional: Add any cleanup or notification if needed
+  end,
+})
+
+-- Define the command for Quartz preview-build mode (if needed - depends on what you want this to do)
+local quartz_preview_build = Terminal:new({
+  cmd = "npx quartz build --serve --verbose --bundleInfo", -- Prepend export command
+  hidden = false,
+  direction = "horizontal",
+  size = 10,
+  on_open = function(term)
+    vim.cmd("startinsert!")
+  end,
+  on_close = function(term)
+    -- Optional: Add any cleanup or notification if needed
+  end,
+})
+
+-- Function to toggle the Quartz preview terminal
+local function toggle_quartz_preview()
+  quartz_preview:toggle()
+end
+
+-- Function to toggle the Quartz preview-build terminal
+local function toggle_quartz_preview_build()
+  quartz_preview_build:toggle()
+end
+
+-- Create Neovim user commands for Quartz preview modes
+vim.api.nvim_create_user_command("QuartzPreview", function()
+  toggle_quartz_preview()
+end, {
+})
+
+vim.api.nvim_create_user_command("QuartzPreviewBuild", function()
+  toggle_quartz_preview_build()
+end, {
+})
+
+-- Set up keybindings for initiating and toggling the Quartz server
+wk.add({
+    { "<leader>qP", ":QuartzPreviewBuild<CR>", desc = "Toggle Quartz [P]ublic preview mode" },
+    { "<leader>qp", ":QuartzPreview<CR>", desc = "Toggle Quartz [p]review mode" },
+}, { mode = 'n', silent = true })
+
 
 -- add yours here
 
@@ -471,11 +328,47 @@ local keymap = vim.keymap
 keymap.set("n", "<leader>xx", "<cmd>!chmod +x %<CR>", { silent = true })
   
 -- Open .docx files in Word
-vim.api.nvim_create_autocmd("BufReadPost", {
+vim.api.nvim_create_autocmd("BufReadCmd", {
     pattern = "*.docx",
-    callback = function()
-        vim.fn.jobstart({"open", "-a", "Microsoft Word", vim.fn.expand("%:p")})
-        vim.cmd("bd!") -- Close the buffer after opening externally
+    callback = function(args)
+        local filename = args.name
+        local filepath = vim.fn.expand(filename)
+
+        print("BufReadCmd triggered for:", filepath) -- DEBUG 1: Check if autocommand is triggered
+        print("Filepath (expanded):", filepath) -- DEBUG 2: Check expanded filepath
+
+        -- Check if we are actually trying to open a .docx file
+        if filepath:lower():match("%.docx$") then
+            print("File is a .docx file") -- DEBUG 3: Check if extension check works
+
+            vim.cmd("silent edit! ++filetype=empty " .. filename) -- Force empty filetype
+            print("Filetype set to empty") -- DEBUG 4: Check if filetype is set
+
+            -- Open the file in Microsoft Word
+            local job_id = vim.fn.jobstart({"open", "-a", "Microsoft Word", filepath}, {
+                on_exit = function(job_id, data, event)
+                    print("Job finished, exit code:", data.exit_code) -- DEBUG 5: Check job exit code
+                    if data.exit_code == 0 then
+                        vim.cmd("bd!") -- Close the buffer after opening externally
+                        print("Buffer closed") -- DEBUG 6: Check if buffer is closed
+                    else
+                        print("Error opening Word, exit code:", data.exit_code) -- DEBUG 7: Check for errors
+                    end
+                end
+            })
+             print("Job started, job ID:", job_id) -- DEBUG 8: Check if job started
+
+            -- Stop further processing - trying both stopautocmd and explicit return
+            vim.cmd("stopautocmd")
+            print("stopautocmd executed") -- DEBUG 9: Check if stopautocmd is executed
+            return -- Explicitly return to stop further processing in Lua too.
+
+
+        else
+            print("File is NOT a .docx file (shouldn't happen for *.docx pattern in BufReadCmd)") -- DEBUG 10: Should not reach here for *.docx
+        end
+        print("Callback finished normally (shouldn't reach here if stopautocmd works for .docx)") -- DEBUG 11: Should not reach here for .docx
+
     end,
 })
 
@@ -498,89 +391,77 @@ vim.api.nvim_set_keymap('n', '<Leader>bp', ':bprevious<CR>', { noremap = true, s
 -- Mapping to close the current buffer
 vim.api.nvim_set_keymap('n', '<Leader>bd', ':bdelete<CR>', { noremap = true, silent = true })
 
-local function autoCapitalizeMd()
-    -- Get current buffer and cursor position
+-- Function to check if the current line is within a code block or YAML front matter
+local function is_in_special_block(line_num)
     local bufnr = vim.api.nvim_get_current_buf()
-    local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-    col = col + 1 -- Adjust for Lua's 1-based indexing
+    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    local in_code_block = false
+    local in_frontmatter = false
+    for i = 1, line_num do
+        local line = lines[i]
+        if line:match("^%-%-%-%s*$") then
+            in_frontmatter = not in_frontmatter
+        elseif line:match("^```") then
+            in_code_block = not in_code_block
+        end
+        if i == line_num then
+            break
+        end
+    end
+    return in_code_block or in_frontmatter
+end
+
+-- Auto-capitalization function
+local function auto_capitalize_md()
+    local pos = vim.api.nvim_win_get_cursor(0)
+    local line_num = pos[1]
+    local col_num = pos[2]
     local line = vim.api.nvim_get_current_line()
     local char = vim.v.char
 
-    -- Function to check if a line is the front matter delimiter
-    local function is_frontmatter_delimiter(text)
-        return text:match("^%-%-%-%s*$") ~= nil
-    end
-
-    -- Determine if the current position is within YAML front matter
-    local is_in_frontmatter = false
-    if is_frontmatter_delimiter(line) then
-        if row == 1 then
-            is_in_frontmatter = true
-        else
-            -- Check if we have already passed the front matter
-            local first_line = vim.api.nvim_buf_get_lines(bufnr, 0, 1, false)[1]
-            if is_frontmatter_delimiter(first_line) then
-                local found_end = false
-                for i = 2, row - 1 do
-                    local check_line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
-                    if is_frontmatter_delimiter(check_line) then
-                        found_end = true
-                        break
-                    end
-                end
-                is_in_frontmatter = not found_end
-            end
-        end
-    end
-
-    -- Do not auto-capitalize if inside front matter
-    if is_in_frontmatter then
+    -- Early exit if in code block or front matter
+    if is_in_special_block(line_num) then
         return
     end
 
-    -- Refine the early return to block only YAML-specific indicators,
-    -- allowing markdown list items that start with '- '
-    if line:match("^%s*[:-]") then
-        -- Block lines that start with ':' (common in YAML) but allow '-' followed by space
-        if not line:match("^%s*%-%s") then
-            return
-        end
+    -- Capitalize first character of the line
+    if col_num == 0 then
+        vim.v.char = char:upper()
+        return
     end
 
-    -- Regular auto-capitalization logic
-    if col == 1 then
-        -- Capitalize first character of the line
-        vim.v.char = char:upper()
-    else
-        local prev_chars_up_to_col = line:sub(1, col - 1)
+    -- Get the character before the cursor
+    local prev_char = line:sub(col_num, col_num)
+    local trimmed_line = line:sub(1, col_num):match("^%s*(.-)%s*$")
 
-        -- Trim trailing spaces for accurate pattern matching
-        local trimmed = prev_chars_up_to_col:match("^(.-)%s*$")
+    -- Patterns after which to capitalize
+    local patterns = {
+        "%.$",  -- Period
+        "%?$",  -- Question mark
+        "!$",   -- Exclamation mark
+        "^#+%s*$",  -- Heading markers
+        "^%s*%-%s*$",  -- Markdown list
+    }
 
-        -- Capitalize after sentence enders (., !, ?) followed by space
-        if trimmed:match("[%.!?]$") then
+    -- Check if previous character matches any pattern
+    for _, pattern in ipairs(patterns) do
+        if trimmed_line:match(pattern) then
             vim.v.char = char:upper()
-        -- Capitalize after '#' (heading markers) if at the start of the line
-        elseif trimmed:match("^#+%s*$") then
-            vim.v.char = char:upper()
-        -- Capitalize after '-' (markdown list items) with optional indentation
-        elseif trimmed:match("^%s*%-%s*$") then
-            vim.v.char = char:upper()
+            return
         end
     end
 end
 
--- Register the function globally if needed
-_G.autoCapitalizeMd = autoCapitalizeMd
+-- Register the function globally
+_G.auto_capitalize_md = auto_capitalize_md
 
--- Setup autocommand using vim.cmd for Markdown filetypes
+-- Setup autocommand for Markdown and Quarto filetypes
 vim.cmd [[
   augroup AutoCapitalizeMd
     autocmd!
-    autocmd InsertCharPre *.md lua _G.autoCapitalizeMd()
+    autocmd InsertCharPre *.md,*.qmd lua _G.auto_capitalize_md()
   augroup END
 ]]
-
 ---- toggle term
 local status_ok, toggleterm = pcall(require, "toggleterm")
 if not status_ok then
@@ -588,7 +469,7 @@ if not status_ok then
 end
 
 toggleterm.setup({
- size = 20,
+ size = 10,
  open_mapping = [[<c-\>]],
  hide_numbers = true,
  shade_filetypes = {},
@@ -629,7 +510,7 @@ function _G.set_terminal_cwd()
   }):toggle()
 end
 
-vim.api.nvim_set_keymap('n', '<c-x>', ':lua set_terminal_cwd()<CR>', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('n', '<Leader>tc', ':lua set_terminal_cwd()<CR>', {noremap = true, silent = true})
 
 -- Define options for key mapping
 local opts = { noremap = true, silent = true }
@@ -647,7 +528,7 @@ vim.api.nvim_create_autocmd("FileType", {
     end,
 })
 
-vim.api.nvim_set_keymap("n", "<C-r>", "<cmd>redo<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "<C-r>", "<cmd>redo<CR>", { noremap = true, silent = true })
 
 -- open file_browser with the path of the current buffer
 vim.keymap.set("n", "<space>e", ":Telescope file_browser path=%:p:h select_buffer=true<CR>")
@@ -723,4 +604,375 @@ end
 -- Adjust the mapping to the keys you want to use, e.g., "<leader>z"
 vim.api.nvim_set_keymap('n', '<leader>zz', ':lua require("zotcite").open_attachment()<CR>', { noremap = true, silent = true })
 
+-- First define the text objects for math delimiters
+vim.api.nvim_set_keymap('o', 'i$', ':<C-u>normal! T$vt$<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('o', 'a$', ':<C-u>normal! F$vf$<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('v', 'i$', ':<C-u>normal! T$vt$<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('v', 'a$', ':<C-u>normal! F$vf$<CR>', { noremap = true, silent = true })
 
+-- Then your existing mappings should work
+_G.my_custom_mappings = _G.my_custom_mappings or {}
+
+_G.my_custom_mappings.ci_dollar = function()
+    vim.cmd('normal! T$vt$c')
+end
+
+_G.my_custom_mappings.ca_dollar = function()
+    vim.cmd('normal! F$vf$c')
+end
+
+_G.my_custom_mappings.vi_dollar = function()
+    vim.cmd('normal! T$vt$')
+end
+
+_G.my_custom_mappings.va_dollar = function()
+    vim.cmd('normal! F$vf$')
+end
+
+vim.api.nvim_set_keymap('n', 'cim', ':lua _G.my_custom_mappings.ci_dollar()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', 'cam', ':lua _G.my_custom_mappings.ca_dollar()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', 'vim', ':lua _G.my_custom_mappings.vi_dollar()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', 'vam', ':lua _G.my_custom_mappings.va_dollar()<CR>', { noremap = true, silent = true })
+
+vim.keymap.set("n", "<leader>nf", function()
+    local oil = require("oil")
+    local date = vim.fn.strftime("%Y-%m-%d") .. ".md" -- Date-based filename
+
+    -- Ensure we're inside an Oil buffer
+    if not oil.get_current_dir() then
+        vim.notify("Not inside an Oil buffer!", vim.log.levels.WARN)
+        return
+    end
+
+    -- Simulate pressing `o` (new line), typing filename, and saving
+    vim.api.nvim_feedkeys("o" .. date .. "\x1b:w\n", "n", false)
+end, { desc = "Create and save a new markdown file with today's date in Oil", silent = true })
+
+wk.add({
+  { "<leader>fr", git_repos_picker, desc = "Open Git Repo Picker" },
+  { "<leader>fs", function() smart_dirs.smart_cd() end, desc = "[S]mart directory navigation" },
+  { "<leader>ff", function()
+      require('telescope.builtin').find_files({
+        no_ignore = true
+      })
+    end, desc = "[F]ind Files (Telescope)" },  -- Added mnemonic and description
+  { "<leader>fa", function()
+      require('telescope.builtin').find_files({
+        follow = true,
+        no_ignore = true,
+        no_ignore_parent = true
+      })
+    end, desc = "[A]ll Files (Telescope)" },  -- Added mnemonic and description
+  { "<leader>bn", ":bnext<CR>", desc = "[N]ext Buffer" }, -- Added mnemonic and description
+  { "<leader>bp", ":bprevious<CR>", desc = "[P]revious Buffer" }, -- Added mnemonic and description
+  { "<leader>bd", ":bdelete<CR>", desc = "[D]elete Buffer" }, -- Added mnemonic and description
+  { "<leader>tc", ":lua set_terminal_cwd()<CR>", desc = "[T]erminal [C]WD" }, -- Added mnemonic and description
+  { "<leader>zz", ':lua require("zotcite").open_attachment()<CR>', desc = "[Z]otcite [Z]otero Attachment" }, -- Added mnemonic and description
+  { "<leader>qr", function()
+      local file = vim.fn.expand("%")
+      vim.cmd("!quarto render " .. file)
+    end, desc = "render [Q]uarto File" }, -- Added mnemonic and description
+    { "<leader>qq", function()  -- Changed to <leader>qp for preview to avoid conflict with <leader>qr
+      local file = vim.fn.expand("%")
+      vim.cmd("!quarto preview " .. file)
+    end, desc = "[P]review Quarto File" }, -- Added mnemonic and description
+}, { prefix = "<leader>", silent = true })
+
+-- Load the module
+local smart_dirs = require('misc.telescope_repos')
+
+-- Create a command to call it
+vim.api.nvim_create_user_command('S', function()
+    smart_dirs.smart_cd()
+end, {})
+
+-- Optionally, add a keybinding
+-- vim.keymap.set('n', '<leader>tr', function()
+--     smart_dirs.smart_cd()
+-- end, { desc = 'Smart directory navigation' })
+
+-- git picker
+local Path = require('plenary.path')
+local scan = require('plenary.scandir')
+local actions = require('telescope.actions')
+local action_state = require('telescope.actions.state')
+local pickers = require('telescope.pickers')
+local finders = require('telescope.finders')
+local conf = require('telescope.config').values
+local entry_display = require('telescope.pickers.entry_display')
+
+-- Define the base directories to search
+local git_repos_base = {
+  "/Users/user/repos/",
+  "/Users/user/repos/public",
+  "/Users/user/repos/private",
+  "/Users/user/.config/nvim/",
+  "/Users/user/repos/private/",
+  "/Users/user/repos/quartz/content"  -- This will now be checked as a potential git repo itself
+}
+
+-- Function to find all git repositories under the specified directories
+local function find_git_repos(base_dirs)
+  local repos = {}
+  for _, dir in ipairs(base_dirs) do
+    -- First check if the base directory itself is a git repo
+    if Path:new(dir):joinpath(".git"):exists() then
+      local repo_name = vim.fn.fnamemodify(dir, ":t")
+      local parent_dir = vim.fn.fnamemodify(dir, ":h:t")
+      table.insert(repos, {
+        path = dir,
+        name = repo_name,
+        parent = parent_dir
+      })
+    end
+
+    -- Then scan for subdirectories that are git repos
+    local ok, files = pcall(scan.scan_dir, dir, {
+      hidden = true,
+      depth = 2,
+      add_dirs = true,
+      respect_gitignore = true
+    })
+    
+    if ok then
+      for _, file in ipairs(files) do
+        if Path:new(file):joinpath(".git"):exists() then
+          local repo_name = vim.fn.fnamemodify(file, ":t")
+          local parent_dir = vim.fn.fnamemodify(file, ":h:t")
+          table.insert(repos, {
+            path = file,
+            name = repo_name,
+            parent = parent_dir
+          })
+        end
+      end
+    end
+  end
+  return repos
+end
+
+-- Create the telescope picker
+local function git_repos_picker()
+  -- Create displayer for custom formatting
+  local displayer = entry_display.create({
+    separator = " ",
+    items = {
+      { width = 30 },  -- repo name
+      { width = 20 },  -- parent directory
+      { remaining = true },  -- full path
+    },
+  })
+
+  local make_display = function(entry)
+    return displayer({
+      entry.name,
+      entry.parent,
+      { entry.path, "Comment" },
+    })
+  end
+
+  -- Dynamically find git repositories
+  local git_repos = find_git_repos(git_repos_base)
+
+  pickers.new({}, {
+    prompt_title = "Git Repositories",
+    finder = finders.new_table({
+      results = git_repos,
+      entry_maker = function(entry)
+        return {
+          value = entry.path,
+          name = entry.name,
+          parent = entry.parent,
+          path = entry.path,
+          display = make_display,
+          ordinal = entry.name .. " " .. entry.parent .. " " .. entry.path,
+        }
+      end,
+    }),
+    sorter = conf.generic_sorter({}),
+    attach_mappings = function(prompt_bufnr, map)
+      -- Handle repository selection
+      local function handle_repo_selection()
+        local selection = action_state.get_selected_entry()
+        actions.close(prompt_bufnr)
+        
+        -- Change the working directory
+        vim.cmd("cd " .. vim.fn.fnameescape(selection.value))
+        
+        -- Change the editing session to the new directory
+        vim.cmd("tcd " .. vim.fn.fnameescape(selection.value))
+        
+        -- Notify about the directory change
+        vim.notify("Changed to repository: " .. selection.name, vim.log.levels.INFO)
+      end
+
+      -- Map enter in insert and normal mode
+      map('i', '<CR>', handle_repo_selection)
+      map('n', '<CR>', handle_repo_selection)
+      
+      return true
+    end,
+  }):find()
+end
+
+-- Set up the keymap
+-- vim.keymap.set('n', '<leader>fr', git_repos_picker, {
+--   desc = "Open Git Repo Picker",
+--   silent = true
+-- })
+
+wk.add({
+  { "<leader>fr", git_repos_picker, desc = "Open Git Repo Picker" },
+  { "<leader>fs", function() smart_dirs.smart_cd() end, desc = "[S]mart directory navigation" },
+}, { mode = 'n', silent = true })
+
+
+wk.add {
+        { "<leader>o", group = "Obsidian" },
+        { "<leader>oo", "<cmd>ObsidianOpen<cr>", desc = "Open note" },
+        { "<leader>od", "<cmd>ObsidianDailies -10 0<cr>", desc = "Daily notes" },
+        { "<leader>op", "<cmd>ObsidianPasteImg<cr>", desc = "Paste image" },
+        { "<leader>oq", "<cmd>ObsidianQuickSwitch<cr>", desc = "Quick switch" },
+        { "<leader>os", "<cmd>ObsidianSearch<cr>", desc = "Search" },
+        { "<leader>ot", "<cmd>ObsidianTags<cr>", desc = "Tags" },
+        { "<leader>ol", "<cmd>ObsidianLinks<cr>", desc = "Links" },
+        { "<leader>ob", "<cmd>ObsidianBacklinks<cr>", desc = "Backlinks" },
+        { "<leader>om", "<cmd>ObsidianTemplate<cr>", desc = "Template" },
+        { "<leader>on", "<cmd>ObsidianQuickSwitch nav<cr>", desc = "Nav" },
+        { "<leader>or", "<cmd>ObsidianRename<cr>", desc = "Rename" },
+        { "<leader>oc", "<cmd>ObsidianTOC<cr>", desc = "Contents (TOC)" },
+        {
+          "<leader>ow",
+          function()
+            local Note = require "obsidian.note"
+            ---@type obsidian.Client
+            local client = require("obsidian").get_client()
+            assert(client)
+
+            local picker = client:picker()
+            if not picker then
+              client.log.err "No picker configured"
+              return
+            end
+
+            ---@param dt number
+            ---@return obsidian.Path
+            local function weekly_note_path(dt)
+              return client.dir / os.date("notes/weekly/week-of-%Y-%m-%d.md", dt)
+            end
+
+            ---@param dt number
+            ---@return string
+            local function weekly_alias(dt)
+              local alias = os.date("Week of %A %B %d, %Y", dt)
+              assert(type(alias) == "string")
+              return alias
+            end
+
+            local day_of_week = os.date "%A"
+            assert(type(day_of_week) == "string")
+
+            ---@type integer
+            local offset_start
+            if day_of_week == "Sunday" then
+              offset_start = 1
+            elseif day_of_week == "Monday" then
+              offset_start = 0
+            elseif day_of_week == "Tuesday" then
+              offset_start = -1
+            elseif day_of_week == "Wednesday" then
+              offset_start = -2
+            elseif day_of_week == "Thursday" then
+              offset_start = -3
+            elseif day_of_week == "Friday" then
+              offset_start = -4
+            elseif day_of_week == "Saturday" then
+              offset_start = 2
+            end
+            assert(offset_start)
+
+            local current_week_dt = os.time() + (offset_start * 3600 * 24)
+            ---@type obsidian.PickerEntry
+            local weeklies = {}
+            for week_offset = 1, -2, -1 do
+              local week_dt = current_week_dt + (week_offset * 3600 * 24 * 7)
+              local week_alias = weekly_alias(week_dt)
+              local week_display = week_alias
+              local path = weekly_note_path(week_dt)
+
+              if week_offset == 0 then
+                week_display = week_display .. " @current"
+              elseif week_offset == 1 then
+                week_display = week_display .. " @next"
+              elseif week_offset == -1 then
+                week_display = week_display .. " @last"
+              end
+
+              if not path:is_file() then
+                week_display = week_display .. " ➡️ create"
+              end
+
+              weeklies[#weeklies + 1] = {
+                value = week_dt,
+                display = week_display,
+                ordinal = week_display,
+                filename = tostring(path),
+              }
+            end
+
+            picker:pick(weeklies, {
+              prompt_title = "Weeklies",
+              callback = function(dt)
+                local path = weekly_note_path(dt)
+                ---@type obsidian.Note
+                local note
+                if path:is_file() then
+                  note = Note.from_file(path)
+                else
+                  note = client:create_note {
+                    id = path.name,
+                    dir = path:parent(),
+                    title = weekly_alias(dt),
+                    tags = { "weekly-notes" },
+                  }
+                end
+                client:open_note(note)
+              end,
+            })
+          end,
+          desc = "Weeklies",
+        },
+        {
+          mode = { "v" },
+          -- { "<leader>o", group = "Obsidian" },
+          {
+            "<leader>oe",
+            function()
+              local title = vim.fn.input { prompt = "Enter title (optional): " }
+              vim.cmd("ObsidianExtractNote " .. title)
+            end,
+            desc = "Extract text into new note",
+          },
+          {
+            "<leader>ol",
+            function()
+              vim.cmd "ObsidianLink"
+            end,
+            desc = "Link text to an existing note",
+          },
+          {
+            "<leader>on",
+            function()
+              vim.cmd "ObsidianLinkNew"
+            end,
+            desc = "Link text to a new note",
+          },
+          {
+            "<leader>ot",
+            function()
+              vim.cmd "ObsidianTags"
+            end,
+            desc = "Tags",
+          },
+        },
+      }

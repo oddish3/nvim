@@ -6,17 +6,38 @@ return {
     dependencies = {
       { 'nvim-telescope/telescope-ui-select.nvim' },
       { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
-      {
-        'jmbuhr/telescope-zotero.nvim',
-        enabled = true,
-        dev = false,
-        dependencies = {
-          { 'kkharji/sqlite.lua' },
+{
+  'jmbuhr/telescope-zotero.nvim',
+  dependencies = {
+    { 'kkharji/sqlite.lua' },
+  },
+  config = function()
+    require('zotero').setup({
+      ft = {
+        md = {
+          insert_key_formatter = function(citekey)
+            return '@' .. citekey
+          end,
+          locate_bib = function()
+            return "/Users/user/repos/quartz/content/bib.bib"
+          end,
         },
-        config = function()
-          vim.keymap.set('n', '<leader>fz', ':Telescope zotero<cr>', { desc = '[z]otero' })
-        end,
-      },
+        default = {
+          insert_key_formatter = function(citekey)
+            return '@' .. citekey
+          end,
+          locate_bib = function()
+            return "/Users/user/repos/quartz/content/bib.bib"
+          end,
+        }
+      }
+    })
+    require('telescope').load_extension('zotero')
+    vim.keymap.set('n', '<leader>fz', ':Telescope zotero<cr>', { desc = '[z]otero' })
+  end,
+},
+      {'cljoly/telescope-repo.nvim'},
+      {'jvgrootveld/telescope-zoxide'},
     },
     config = function()
       local telescope = require 'telescope'
@@ -106,15 +127,11 @@ return {
       telescope.load_extension 'zotero'
     end,
   },
-{
-  'arnamak/stay-centered.nvim',
-},
   { -- Highlight todo, notes, etc in comments
     'folke/todo-comments.nvim',
     dependencies = { 'nvim-lua/plenary.nvim' },
     opts = { signs = false },
   },
-
   { -- edit the file system as a buffer
     'stevearc/oil.nvim',
     opts = {
@@ -134,49 +151,6 @@ return {
     },
     cmd = 'Oil',
   },
-
-  { -- statusline
-    -- PERF: I found this to slow down the editor
-    'nvim-lualine/lualine.nvim',
-    enabled = false,
-    config = function()
-      local function macro_recording()
-        local reg = vim.fn.reg_recording()
-        if reg == '' then
-          return ''
-        end
-        return '📷[' .. reg .. ']'
-      end
-
-      ---@diagnostic disable-next-line: undefined-field
-      require('lualine').setup {
-        options = {
-          section_separators = '',
-          component_separators = '',
-          globalstatus = true,
-        },
-        sections = {
-          lualine_a = { 'mode', macro_recording },
-          lualine_b = { 'branch', 'diff', 'diagnostics' },
-          -- lualine_b = {},
-          lualine_c = { 'searchcount' },
-          lualine_x = { 'filetype' },
-          lualine_y = { 'progress' },
-          lualine_z = { 'location' },
-        },
-        extensions = { 'nvim-tree' },
-      }
-    end,
-  },
-
-  { -- nicer-looking tabs with close icons
-    'nanozuki/tabby.nvim',
-    enabled = false,
-    config = function()
-      require('tabby.tabline').use_preset 'tab_only'
-    end,
-  },
-
   { -- scrollbar
     'dstein64/nvim-scrollview',
     enabled = true,
@@ -184,73 +158,16 @@ return {
       current_only = true,
     },
   },
-
-  { -- highlight occurences of current word
-    'RRethy/vim-illuminate',
-    enabled = false,
-  },
-
-  {
-    "NStefan002/screenkey.nvim",
-    lazy = false,
-  },
-
-  { -- filetree
-    'nvim-tree/nvim-tree.lua',
-    enabled = true,
-    keys = {
-      { '<c-b>', ':NvimTreeToggle<cr>', desc = 'toggle nvim-tree' },
-    },
-    config = function()
-      require('nvim-tree').setup {
-        disable_netrw = true,
-        update_focused_file = {
-          enable = true,
-        },
-        git = {
-          enable = true,
-          ignore = false,
-          timeout = 500,
-        },
-        diagnostics = {
-          enable = true,
-        },
-      }
-    end,
-  },
-
   -- show keybinding help window
   {
     'folke/which-key.nvim',
     enabled = true,
+    event = 'VeryLazy',
     config = function()
       require('which-key').setup {}
       require 'config.keymap'
     end,
   },
-
-  { -- show tree of symbols in the current file
-    'hedyhli/outline.nvim',
-    cmd = 'Outline',
-    keys = {
-      { '<leader>lo', ':Outline<cr>', desc = 'symbols outline' },
-    },
-    opts = {
-      providers = {
-        priority = { 'markdown', 'lsp',  'norg' },
-        -- Configuration for each provider (3rd party providers are supported)
-        lsp = {
-          -- Lsp client names to ignore
-          blacklist_clients = {},
-        },
-        markdown = {
-          -- List of supported ft's to use the markdown provider
-          filetypes = { 'markdown', 'quarto' },
-        },
-      },
-    },
-  },
-
   { -- or show symbols in the current file as breadcrumbs
     'Bekaboo/dropbar.nvim',
     enabled = function()
@@ -262,55 +179,16 @@ return {
     config = function()
       -- turn off global option for windowline
       vim.opt.winbar = nil
-      vim.keymap.set('n', '<leader>ls', require('dropbar.api').pick, { desc = '[s]ymbols' })
+      vim.keymap.set('n', '<leaderls', require('dropbar.api').pick, { desc = '[s]ymbols' })
     end,
   },
-
   { -- terminal
-    'akinsho/toggleterm.nvim',
-    opts = {
-      open_mapping = [[<c-\>]],
-      direction = 'float',
-    },
+  'akinsho/toggleterm.nvim',
+  opts = {
+    open_mapping = [[<leader>tt]],
+    direction = 'float',
   },
-  { -- show indent lines
-    'lukas-reineke/indent-blankline.nvim',
-    enabled = false,
-    main = 'ibl',
-    opts = {
-      indent = { char = '│' },
-    },
-  },
-
-  { -- highlight markdown headings and code blocks etc.
-    'lukas-reineke/headlines.nvim',
-    enabled = false,
-    dependencies = 'nvim-treesitter/nvim-treesitter',
-    config = function()
-      require('headlines').setup {
-        quarto = {
-          query = vim.treesitter.query.parse(
-            'markdown',
-            [[
-                (fenced_code_block) @codeblock
-                ]]
-          ),
-          codeblock_highlight = 'CodeBlock',
-          treesitter_language = 'markdown',
-        },
-        markdown = {
-          query = vim.treesitter.query.parse(
-            'markdown',
-            [[
-                (fenced_code_block) @codeblock
-                ]]
-          ),
-          codeblock_highlight = 'CodeBlock',
-        },
-      }
-    end,
-  },
-
+},
   { -- show images in nvim!
     '3rd/image.nvim',
     enabled = true,
@@ -415,4 +293,106 @@ return {
       vim.keymap.set('n', '<leader>ic', clear_all_images, { desc = 'image [c]lear' })
     end,
   },
+{
+  'HakonHarnes/img-clip.nvim',
+  event = 'BufEnter',
+  ft = { 'markdown', 'quarto', 'latex' },
+  config = function()
+    -- Function to check if we're in the vault directory structure and get the root
+    local function get_vault_root()
+      local current_dir = vim.fn.expand('%:p:h')
+      local vault_path = vim.fn.expand('~/vault')
+      
+      if vim.startswith(current_dir, vault_path) then
+        return vault_path
+      end
+      return nil
+    end
+
+    -- Function to calculate relative path from current file to assets directory
+    local function get_relative_assets_path()
+      local current_file_dir = vim.fn.expand('%:p:h')
+      local vault_root = vim.fn.expand('/Users/user/repos/quartz/content/')
+      
+      -- If we're in the vault root, return just 'assets'
+      if current_file_dir == vault_root then
+        return 'assets'
+      end
+      
+      -- Get the path components for nested directories
+      local current_parts = vim.split(current_file_dir:sub(vault_root:len() + 2), '/')
+      
+      -- Calculate number of levels to go up
+      local levels_up = #current_parts
+      
+      -- Build the relative path
+      return string.rep('../', levels_up) .. 'assets'
+    end
+
+    -- Function to check if clipboard contains an image on macOS
+    local function has_image_in_clipboard()
+      if vim.fn.has('macunix') == 1 then
+        local handle = io.popen('osascript -e "clipboard info" 2>/dev/null')
+        if handle then
+          local result = handle:read("*a")
+          handle:close()
+          return result:match("«class PNGf»") ~= nil
+        end
+      end
+      return false
+    end
+
+    -- Common function to handle image pasting
+    local function paste_to_assets(is_private)
+      -- Check if we're somewhere in the vault structure
+      local vault_root = get_vault_root()
+      if not vault_root then
+        vim.notify("Not in vault directory structure!", vim.log.levels.ERROR)
+        return
+      end
+
+      -- Then check for image in clipboard
+      if not has_image_in_clipboard() then
+        vim.notify("No image found in clipboard!", vim.log.levels.ERROR)
+        return
+      end
+
+      local filename = vim.fn.input('Enter image filename (without extension): ')
+      if filename == '' then return end
+
+      local dir_type = is_private and 'private' or 'public'
+      local assets_dir = string.format('%s/assets/%s', vault_root, dir_type)
+      
+      -- Ensure the assets directory exists
+      vim.fn.mkdir(assets_dir, 'p')
+      
+      -- Calculate the relative path for the markdown link
+      local relative_assets = get_relative_assets_path()
+      
+      -- Use the API directly with options
+      require('img-clip').paste_image({
+        dir_path = assets_dir,
+        relative_to_current_file = false,  -- Use absolute path for saving
+        prompt_for_file_name = false,
+        file_name = filename,
+        -- Use the calculated relative path in the template
+        template = string.format('![Image](%s/%s/%s.png)', relative_assets, dir_type, filename)
+      })
+    end
+
+    -- Keymap for public assets
+    vim.keymap.set('n', '<leader>ip', function()
+      paste_to_assets(false)
+    end, { desc = 'Paste image to public assets folder' })
+
+    -- Keymap for private assets
+    vim.keymap.set('n', '<leader>iP', function()
+      paste_to_assets(true)
+    end, { desc = 'Paste image to private assets folder' })
+  end
+},
+  {
+    "tpope/vim-obsession",
+    event = "VeryLazy", -- Optional: Load only when needed
+  }
 }

@@ -1,6 +1,8 @@
 return {
   {
     'nvim-treesitter/nvim-treesitter',
+    -- enabled = false,
+    event = 'BufReadPost',
     dev = false,
     dependencies = {
       {
@@ -24,7 +26,6 @@ return {
           'vim',
           'query',
           'vimdoc',
-          'latex', -- requires tree-sitter-cli (installed automatically via Mason)
           'html',
           'css',
           'dot',
@@ -35,7 +36,8 @@ return {
         },
         highlight = {
           enable = true,
-          additional_vim_regex_highlighting = false,
+          disable = {"latex", "quarto"},
+          additional_vim_regex_highlighting = { "latex", "markdown", "quarto" },
         },
         indent = {
           enable = true,
