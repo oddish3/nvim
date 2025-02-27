@@ -555,47 +555,56 @@ wk.add({
 -- Load the ToggleTerm module
 local Terminal = require("toggleterm.terminal").Terminal
 
--- Single terminal instance with improved handling
-local quartz_preview = Terminal:new({
-  cmd = "cd /Users/user/repos/quartz && export QUARTZ_MODE=preview && npx quartz build --serve --verbose --bundleInfo",
-  hidden = true,  -- Starts hidden by default
-  direction = "horizontal",
-  size = 10,
-  -- Store our custom state
-  state = {
-    browser_opened = false,
-    is_running = false
-  },
-  on_open = function(term)
-    vim.cmd("startinsert!")
-    term.state.browser_opened = false  -- Reset on restart
-    term.state.is_running = true
-  end,
-  on_close = function(term)
-    term.state.is_running = false
-  end,
-  on_stdout = function(term, job, data, name)
-    if term.state.browser_opened then return end
-    
-    for _, line in ipairs(data) do
-      if line:match("localhost:8080") then
-        -- macOS uses 'open' command, Linux would use 'xdg-open'
-        vim.fn.jobstart({"open", "http://localhost:8080"})
-        term.state.browser_opened = true
-        break
+-- Factory function to create quartz terminals
+local function create_quartz_terminal(name, command)
+  return Terminal:new({
+    cmd = command,
+    hidden = true,
+    direction = "horizontal",
+    size = 10,
+    state = {
+      browser_opened = false,
+      is_running = false
+    },
+    on_open = function(term)
+      vim.cmd("startinsert!")
+      term.state.browser_opened = false
+      term.state.is_running = true
+    end,
+    on_close = function(term)
+      term.state.is_running = false
+    end,
+    on_stdout = function(term, job, data, name)
+      if term.state.browser_opened then return end
+      
+      for _, line in ipairs(data) do
+        if line:match("localhost:8080") then
+          vim.fn.jobstart({"open", "http://localhost:8080"})
+          term.state.browser_opened = true
+          break
+        end
       end
-    end
-  end,
-  on_stderr = function(term, job, data, name)
-    for _, line in ipairs(data) do
-      if line:match("error") then
-        vim.notify("Quartz error: " .. line, vim.log.levels.ERROR)
+    end,
+    on_stderr = function(term, job, data, name)
+      for _, line in ipairs(data) do
+        if line:match("error") then
+          vim.notify(name .. " error: " .. line, vim.log.levels.ERROR)
+        end
       end
-    end
-  end,
-})
+    end,
+  })
+end
 
--- Unified toggle function
+-- Create two terminal instances with different configurations
+local quartz_preview = create_quartz_terminal("Quartz Preview",
+  "cd /Users/user/repos/quartz && export QUARTZ_MODE=preview && npx quartz build --serve --verbose --bundleInfo"
+)
+
+local quartz_build = create_quartz_terminal("Quartz Build",
+  "cd /Users/user/repos/quartz && npx quartz build --serve --verbose --bundleInfo"
+)
+
+-- Toggle functions for both variants
 local function toggle_quartz_preview()
   if not quartz_preview.state.is_running then
     quartz_preview:start()
@@ -604,21 +613,21 @@ local function toggle_quartz_preview()
   end
 end
 
--- Single user command
+local function toggle_quartz_build()
+  if not quartz_build.state.is_running then
+    quartz_build:start()
+  else
+    quartz_build:toggle()
+  end
+end
+
+-- Create separate user commands
 vim.api.nvim_create_user_command("QuartzPreview", toggle_quartz_preview, {})
+vim.api.nvim_create_user_command("QuartzBuild", toggle_quartz_build, {})
 
--- Keybinding setup
+-- Keybindings
 wk.add({
-  ["<leader>qp"] = {
-    function()
-      toggle_quartz_preview()
-    end,
-    desc = "Toggle Quartz [p]review"
-  }
+  {"<leader>qp", toggle_quartz_preview, desc = "Quartz [P]review" },
+  {"<leader>qb",  toggle_quartz_build, desc = "Quartz preview [B]uild" },
 }, { mode = 'n', silent = true })
 
--- Set up keybindings for initiating and toggling the Quartz server
-wk.add({
-    { "<leader>qp", ":QuartzPreview<CR>", desc = "Toggle Quartz [p]review mode" },
-  { "<leader>qP", ":QuartzPreview<CR>", desc = "Toggle Quartz [P]review build mode" },
-}, { mode = 'n', silent = true })
