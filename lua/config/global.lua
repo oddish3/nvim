@@ -101,7 +101,8 @@ vim.opt.formatoptions:remove 'o'
 vim.opt.scrolloff = 5
 
 -- (don't == 0) replace certain elements with prettier ones
-vim.opt.conceallevel = 0
+-- vim.opt.conceallevel = 0
+-- vim.opt_local.conceallevel = 2
 
 -- diagnostics
 vim.diagnostic.config {

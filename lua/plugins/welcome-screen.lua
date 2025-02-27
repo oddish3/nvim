@@ -2,6 +2,7 @@ return {
   -- dashboard to greet
   {
     'goolord/alpha-nvim',
+    -- enabled = false,
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     config = function()
       local alpha = require 'alpha'

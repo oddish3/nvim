@@ -1,6 +1,7 @@
 return {
   {
     'nvim-treesitter/nvim-treesitter',
+    -- enabled = false,
     dev = false,
     dependencies = {
       {

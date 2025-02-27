@@ -6,7 +6,7 @@ return {
     dependencies = {
       { 'nvim-telescope/telescope-ui-select.nvim' },
       { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
-      { 'nvim-telescope/telescope-dap.nvim' },
+      -- { 'nvim-telescope/telescope-dap.nvim' },
       {
         'jmbuhr/telescope-zotero.nvim',
         enabled = true,
@@ -104,7 +104,7 @@ return {
       }
       telescope.load_extension 'fzf'
       telescope.load_extension 'ui-select'
-      telescope.load_extension 'dap'
+      -- telescope.load_extension 'dap'
       telescope.load_extension 'zotero'
     end,
   },
@@ -310,7 +310,7 @@ return {
 
   { -- show indent lines
     'lukas-reineke/indent-blankline.nvim',
-    enabled = false,
+    -- enabled = false,
     main = 'ibl',
     opts = {
       indent = { char = '│' },

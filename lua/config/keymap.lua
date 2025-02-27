@@ -295,12 +295,15 @@ local function get_otter_symbols_lang()
   vim.lsp.buf_request(main_nr, ms.textDocument_documentSymbol, params, nil)
 end
 
-vim.keymap.set("n", "<leader>os", get_otter_symbols_lang, {desc = "otter [s]ymbols"})
+-- vim.keymap.set("n", "<leader>os", get_otter_symbols_lang, {desc = "otter [s]ymbols"})
 
 
 -- normal mode with <leader>
 wk.add({
-  {
+  {  { "<leader>m", group = "Markdown" },
+    { "<leader>mt", "<cmd>MarkdownPreviewToggle<cr>", desc = "[T]oggle Preview" },
+    { "<leader>mp", "<cmd>MarkdownPreview<cr>", desc = "Start [P]review" },
+    { "<leader>ms", "<cmd>MarkdownPreviewStop<cr>", desc = "[S]top Preview" },
     { "<leader><cr>", send_cell, desc = "run code cell" },
     { "<leader>c", group = "[c]ode / [c]ell / [c]hunk" },
     { "<leader>ci", new_terminal_ipython, desc = "new [i]python terminal" },
@@ -352,15 +355,162 @@ wk.add({
     { "<leader>le", vim.diagnostic.open_float, desc = "diagnostics (show hover [e]rror)" },
     { "<leader>lg", ":Neogen<cr>", desc = "neo[g]en docstring" },
     { "<leader>o", group = "[o]tter & c[o]de" },
-    { "<leader>oa", require'otter'.activate, desc = "otter [a]ctivate" },
-    { "<leader>ob", insert_bash_chunk, desc = "[b]ash code chunk" },
-    { "<leader>oc", "O# %%<cr>", desc = "magic [c]omment code chunk # %%" },
-    { "<leader>od", require'otter'.activate, desc = "otter [d]eactivate" },
-    { "<leader>oj", insert_julia_chunk, desc = "[j]ulia code chunk" },
-    { "<leader>ol", insert_lua_chunk, desc = "[l]lua code chunk" },
-    { "<leader>oo", insert_ojs_chunk, desc = "[o]bservable js code chunk" },
-    { "<leader>op", insert_py_chunk, desc = "[p]ython code chunk" },
-    { "<leader>or", insert_r_chunk, desc = "[r] code chunk" },
+    -- { "<leader>oa", require'otter'.activate, desc = "otter [a]ctivate" },
+    -- { "<leader>ob", insert_bash_chunk, desc = "[b]ash code chunk" },
+    -- { "<leader>oc", "O# %%<cr>", desc = "magic [c]omment code chunk # %%" },
+    -- { "<leader>od", require'otter'.activate, desc = "otter [d]eactivate" },
+    -- { "<leader>oj", insert_julia_chunk, desc = "[j]ulia code chunk" },
+    -- { "<leader>ol", insert_lua_chunk, desc = "[l]lua code chunk" },
+    -- { "<leader>oo", insert_ojs_chunk, desc = "[o]bservable js code chunk" },
+    -- { "<leader>op", insert_py_chunk, desc = "[p]ython code chunk" },
+    -- { "<leader>or", insert_r_chunk, desc = "[r] code chunk" },
+        { "<leader>o", group = "Obsidian" },
+        { "<leader>oo", "<cmd>ObsidianOpen<cr>", desc = "Open note" },
+        { "<leader>od", "<cmd>ObsidianDailies -10 0<cr>", desc = "Daily notes" },
+        { "<leader>op", "<cmd>ObsidianPasteImg<cr>", desc = "Paste image" },
+        { "<leader>oq", "<cmd>ObsidianQuickSwitch<cr>", desc = "Quick switch" },
+        { "<leader>os", "<cmd>ObsidianSearch<cr>", desc = "Search" },
+        { "<leader>ot", "<cmd>ObsidianTags<cr>", desc = "Tags" },
+        { "<leader>ol", "<cmd>ObsidianLinks<cr>", desc = "Links" },
+        { "<leader>ob", "<cmd>ObsidianBacklinks<cr>", desc = "Backlinks" },
+        { "<leader>om", "<cmd>ObsidianTemplate<cr>", desc = "Template" },
+        { "<leader>on", "<cmd>ObsidianQuickSwitch nav<cr>", desc = "Nav" },
+        { "<leader>or", "<cmd>ObsidianRename<cr>", desc = "Rename" },
+        { "<leader>oc", "<cmd>ObsidianTOC<cr>", desc = "Contents (TOC)" },
+        {
+          "<leader>ow",
+          function()
+            local Note = require "obsidian.note"
+            ---@type obsidian.Client
+            local client = require("obsidian").get_client()
+            assert(client)
+
+            local picker = client:picker()
+            if not picker then
+              client.log.err "No picker configured"
+              return
+            end
+
+            ---@param dt number
+            ---@return obsidian.Path
+            local function weekly_note_path(dt)
+              return client.dir / os.date("notes/weekly/week-of-%Y-%m-%d.md", dt)
+            end
+
+            ---@param dt number
+            ---@return string
+            local function weekly_alias(dt)
+              local alias = os.date("Week of %A %B %d, %Y", dt)
+              assert(type(alias) == "string")
+              return alias
+            end
+
+            local day_of_week = os.date "%A"
+            assert(type(day_of_week) == "string")
+
+            ---@type integer
+            local offset_start
+            if day_of_week == "Sunday" then
+              offset_start = 1
+            elseif day_of_week == "Monday" then
+              offset_start = 0
+            elseif day_of_week == "Tuesday" then
+              offset_start = -1
+            elseif day_of_week == "Wednesday" then
+              offset_start = -2
+            elseif day_of_week == "Thursday" then
+              offset_start = -3
+            elseif day_of_week == "Friday" then
+              offset_start = -4
+            elseif day_of_week == "Saturday" then
+              offset_start = 2
+            end
+            assert(offset_start)
+
+            local current_week_dt = os.time() + (offset_start * 3600 * 24)
+            ---@type obsidian.PickerEntry
+            local weeklies = {}
+            for week_offset = 1, -2, -1 do
+              local week_dt = current_week_dt + (week_offset * 3600 * 24 * 7)
+              local week_alias = weekly_alias(week_dt)
+              local week_display = week_alias
+              local path = weekly_note_path(week_dt)
+
+              if week_offset == 0 then
+                week_display = week_display .. " @current"
+              elseif week_offset == 1 then
+                week_display = week_display .. " @next"
+              elseif week_offset == -1 then
+                week_display = week_display .. " @last"
+              end
+
+              if not path:is_file() then
+                week_display = week_display .. " ➡️ create"
+              end
+
+              weeklies[#weeklies + 1] = {
+                value = week_dt,
+                display = week_display,
+                ordinal = week_display,
+                filename = tostring(path),
+              }
+            end
+
+            picker:pick(weeklies, {
+              prompt_title = "Weeklies",
+              callback = function(dt)
+                local path = weekly_note_path(dt)
+                ---@type obsidian.Note
+                local note
+                if path:is_file() then
+                  note = Note.from_file(path)
+                else
+                  note = client:create_note {
+                    id = path.name,
+                    dir = path:parent(),
+                    title = weekly_alias(dt),
+                    tags = { "weekly-notes" },
+                  }
+                end
+                client:open_note(note)
+              end,
+            })
+          end,
+          desc = "Weeklies",
+        },
+        {
+          mode = { "v" },
+          -- { "<leader>o", group = "Obsidian" },
+          {
+            "<leader>oe",
+            function()
+              local title = vim.fn.input { prompt = "Enter title (optional): " }
+              vim.cmd("ObsidianExtractNote " .. title)
+            end,
+            desc = "Extract text into new note",
+          },
+          {
+            "<leader>ol",
+            function()
+              vim.cmd "ObsidianLink"
+            end,
+            desc = "Link text to an existing note",
+          },
+          {
+            "<leader>on",
+            function()
+              vim.cmd "ObsidianLinkNew"
+            end,
+            desc = "Link text to a new note",
+          },
+          {
+            "<leader>ot",
+            function()
+              vim.cmd "ObsidianTags"
+            end,
+            desc = "Tags",
+          },
+        },
     { "<leader>q", group = "[q]uarto" },
     { "<leader>qE", function() require('otter').export(true) end, desc = "[E]xport with overwrite" },
     { "<leader>qa", ":QuartoActivate<cr>", desc = "[a]ctivate" },
@@ -385,3 +535,90 @@ wk.add({
     { "<leader>xx", ":w<cr>:source %<cr>", desc = "[x] source %" },
   }
 }, { mode = 'n'})
+
+vim.api.nvim_set_keymap('i', '<C-l>', '<c-g>u<Esc>[s1z=`]a<c-g>u', { noremap = true, silent = true })
+-- unbind ctrl-k in normal mode
+vim.api.nvim_set_keymap('i', '<C-k>', '<nop>', { noremap = true, silent = true })
+
+vim.api.nvim_set_keymap('n', 'zz', ':Alpha<CR>', { noremap = true, silent = true })
+--
+local smart_dirs = require('misc.telescope_repos')
+
+-- Create a command to call it
+vim.api.nvim_create_user_command('S', function()
+    smart_dirs.smart_cd()
+end, {})
+wk.add({
+  { "<leader>fs", function() smart_dirs.smart_cd() end, desc = "[S]mart directory navigation" },
+}, { mode = 'n', silent = true })
+
+-- Load the ToggleTerm module
+local Terminal = require("toggleterm.terminal").Terminal
+
+-- Single terminal instance with improved handling
+local quartz_preview = Terminal:new({
+  cmd = "cd /Users/user/repos/quartz && export QUARTZ_MODE=preview && npx quartz build --serve --verbose --bundleInfo",
+  hidden = true,  -- Starts hidden by default
+  direction = "horizontal",
+  size = 10,
+  -- Store our custom state
+  state = {
+    browser_opened = false,
+    is_running = false
+  },
+  on_open = function(term)
+    vim.cmd("startinsert!")
+    term.state.browser_opened = false  -- Reset on restart
+    term.state.is_running = true
+  end,
+  on_close = function(term)
+    term.state.is_running = false
+  end,
+  on_stdout = function(term, job, data, name)
+    if term.state.browser_opened then return end
+    
+    for _, line in ipairs(data) do
+      if line:match("localhost:8080") then
+        -- macOS uses 'open' command, Linux would use 'xdg-open'
+        vim.fn.jobstart({"open", "http://localhost:8080"})
+        term.state.browser_opened = true
+        break
+      end
+    end
+  end,
+  on_stderr = function(term, job, data, name)
+    for _, line in ipairs(data) do
+      if line:match("error") then
+        vim.notify("Quartz error: " .. line, vim.log.levels.ERROR)
+      end
+    end
+  end,
+})
+
+-- Unified toggle function
+local function toggle_quartz_preview()
+  if not quartz_preview.state.is_running then
+    quartz_preview:start()
+  else
+    quartz_preview:toggle()
+  end
+end
+
+-- Single user command
+vim.api.nvim_create_user_command("QuartzPreview", toggle_quartz_preview, {})
+
+-- Keybinding setup
+wk.add({
+  ["<leader>qp"] = {
+    function()
+      toggle_quartz_preview()
+    end,
+    desc = "Toggle Quartz [p]review"
+  }
+}, { mode = 'n', silent = true })
+
+-- Set up keybindings for initiating and toggling the Quartz server
+wk.add({
+    { "<leader>qp", ":QuartzPreview<CR>", desc = "Toggle Quartz [p]review mode" },
+  { "<leader>qP", ":QuartzPreview<CR>", desc = "Toggle Quartz [P]review build mode" },
+}, { mode = 'n', silent = true })

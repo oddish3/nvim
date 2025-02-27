@@ -69,7 +69,7 @@ return {
   -- color html colors
   {
     'NvChad/nvim-colorizer.lua',
-    enabled = true,
+    enabled = false,
     opts = {
       filetypes = { '*' },
       user_default_options = {

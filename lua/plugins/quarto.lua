@@ -3,6 +3,7 @@ return {
   { -- requires plugins in lua/plugins/treesitter.lua and lua/plugins/lsp.lua
     -- for complete functionality (language features)
     'quarto-dev/quarto-nvim',
+            enabled = false,
     ft = { 'quarto' },
     dev = false,
     opts = {},
@@ -17,6 +18,8 @@ return {
   { -- directly open ipynb files as quarto docuements
     -- and convert back behind the scenes
     'GCBallesteros/jupytext.nvim',
+            enabled = false,
+
     opts = {
       custom_language_formatting = {
         python = {
@@ -36,6 +39,7 @@ return {
   { -- send code from python/r/qmd documets to a terminal or REPL
     -- like ipython, R, bash
     'jpalardy/vim-slime',
+            enabled = false,
     dev = false,
     init = function()
       vim.b['quarto_is_python_chunk'] = false
@@ -81,40 +85,49 @@ return {
       vim.keymap.set('n', '<leader>cs', set_terminal, { desc = '[s]et terminal' })
     end,
   },
-
-  { -- paste an image from the clipboard or drag-and-drop
-    'HakonHarnes/img-clip.nvim',
-    event = 'BufEnter',
-    ft = { 'markdown', 'quarto', 'latex' },
-    opts = {
-      default = {
-        dir_path = 'img',
-      },
-      filetypes = {
-        markdown = {
-          url_encode_path = true,
-          template = '![$CURSOR]($FILE_PATH)',
-          drag_and_drop = {
-            download_images = false,
-          },
+  {
+  'HakonHarnes/img-clip.nvim',
+                -- enabled = false,
+  event = 'BufEnter',
+  ft = { 'markdown', 'quarto', 'latex' },
+  opts = {
+    default = {
+      dir_path = 'assets/private', -- Default to private storage
+    },
+    filetypes = {
+      markdown = {
+        url_encode_path = true,
+        template = '![$CURSOR]($FILE_PATH)',
+        drag_and_drop = {
+          download_images = false,
         },
-        quarto = {
-          url_encode_path = true,
-          template = '![$CURSOR]($FILE_PATH)',
-          drag_and_drop = {
-            download_images = false,
-          },
+      },
+      quarto = {
+        url_encode_path = true,
+        template = '![$CURSOR]($FILE_PATH)',
+        drag_and_drop = {
+          download_images = false,
         },
       },
     },
-    config = function(_, opts)
-      require('img-clip').setup(opts)
-      vim.keymap.set('n', '<leader>ii', ':PasteImage<cr>', { desc = 'insert [i]mage from clipboard' })
-    end,
   },
-
+  config = function(_, opts)
+    require('img-clip').setup(opts)
+    
+    -- Private image insertion
+    vim.keymap.set('n', 'ip', function()
+      require('img-clip').pasteImage({ dir_path = 'assets/private' })
+    end, { desc = 'Insert private image from clipboard' })
+    
+    -- Public image insertion
+    vim.keymap.set('n', 'iP', function()
+      require('img-clip').pasteImage({ dir_path = 'assets/public' })
+    end, { desc = 'Insert public image from clipboard' })
+  end,
+},
   { -- preview equations
     'jbyuki/nabla.nvim',
+                enabled = false,
     keys = {
       { '<leader>qm', ':lua require"nabla".toggle_virt()<cr>', desc = 'toggle [m]ath equations' },
     },

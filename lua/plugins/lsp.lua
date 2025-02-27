@@ -1,10 +1,10 @@
 
 return {
-
   {
 
     -- for lsp features in code cells / embedded code
     'jmbuhr/otter.nvim',
+    -- enable = false,
     dev = false,
     dependencies = {
       {
@@ -21,6 +21,7 @@ return {
 
   {
     'neovim/nvim-lspconfig',
+        -- enable = false,
     dependencies = {
       { 'williamboman/mason.nvim' },
       { 'williamboman/mason-lspconfig.nvim' },

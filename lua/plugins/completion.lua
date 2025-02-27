@@ -1,24 +1,75 @@
 return {
   {
     'windwp/nvim-autopairs',
+        -- enabled = false,
     config = function()
       require('nvim-autopairs').setup {}
       require('nvim-autopairs').remove_rule '`'
     end,
   },
+{
+    "gaoDean/autolist.nvim",
+    -- enabled = false,
+    ft = {
+        "markdown",
+        "text",
+        "tex",
+        "plaintex",
+        "norg",
+        "quarto"
+    },
+    config = function()
+        require("autolist").setup()
 
+        vim.keymap.set("i", "<tab>", "<cmd>AutolistTab<cr>")
+        vim.keymap.set("i", "<s-tab>", "<cmd>AutolistShiftTab<cr>")
+        -- vim.keymap.set("i", "<c-t>", "<c-t><cmd>AutolistRecalculate<cr>") -- an example of using <c-t> to indent
+        vim.keymap.set("i", "<CR>", "<CR><cmd>AutolistNewBullet<cr>")
+        vim.keymap.set("n", "o", "o<cmd>AutolistNewBullet<cr>")
+        vim.keymap.set("n", "O", "O<cmd>AutolistNewBulletBefore<cr>")
+        vim.keymap.set("n", "<CR>", "<cmd>AutolistToggleCheckbox<cr><CR>")
+        -- vim.keymap.set("n", "<C-r>", "<cmd>AutolistRecalculate<cr>")
+
+        -- cycle list types with dot-repeat
+        vim.keymap.set("n", "<leader>cn", require("autolist").cycle_next_dr, { expr = true })
+        vim.keymap.set("n", "<leader>cp", require("autolist").cycle_prev_dr, { expr = true })
+
+        -- if you don't want dot-repeat
+        -- vim.keymap.set("n", "<leader>cn", "<cmd>AutolistCycleNext<cr>")
+        -- vim.keymap.set("n", "<leader>cp", "<cmd>AutolistCycleNext<cr>")
+
+        -- functions to recalculate list on edit
+        vim.keymap.set("n", ">>", ">><cmd>AutolistRecalculate<cr>")
+        vim.keymap.set("n", "<<", "<<<cmd>AutolistRecalculate<cr>")
+        vim.keymap.set("n", "dd", "dd<cmd>AutolistRecalculate<cr>")
+        vim.keymap.set("v", "d", "d<cmd>AutolistRecalculate<cr>")
+    end,
+  },
   { -- completion
     'hrsh7th/nvim-cmp',
+        -- enabled = false,
     event = 'InsertEnter',
     dependencies = {
+      {
+    -- "aarnphm/luasnip-latex-snippets.nvim",
+      dir = "/Users/user/repos/public/luasnip-latex-snippets.nvim",
+    version = false,
+    lazy = true,
+    ft = { "markdown", "norg", "rmd", "org" },
+    config = function()
+      require("luasnip-latex-snippets").setup { use_treesitter = true }
+      require("luasnip").config.setup { enable_autosnippets = true }
+      -- require("luasnip.loaders.from_lua").load({paths = "/Users/user/.config/quarto-nvim-kickstarter/lua/snips"})
+    end,
+  },
       'hrsh7th/cmp-nvim-lsp',
       'hrsh7th/cmp-nvim-lsp-signature-help',
       'hrsh7th/cmp-buffer',
       'hrsh7th/cmp-path',
-      'hrsh7th/cmp-calc',
-      'hrsh7th/cmp-emoji',
+      -- 'hrsh7th/cmp-calc',
+      -- 'hrsh7th/cmp-emoji',
       'saadparwaiz1/cmp_luasnip',
-      'f3fora/cmp-spell',
+      -- 'f3fora/cmp-spell',
       'ray-x/cmp-treesitter',
       'kdheepak/cmp-latex-symbols',
       'jmbuhr/cmp-pandoc-references',
@@ -31,6 +82,7 @@ return {
       local cmp = require 'cmp'
       local luasnip = require 'luasnip'
       local lspkind = require 'lspkind'
+      local ls = require("luasnip")
 
       local has_words_before = function()
         local line, col = unpack(vim.api.nvim_win_get_cursor(0))
@@ -45,58 +97,34 @@ return {
         },
         completion = { completeopt = 'menu,menuone,noinsert' },
         mapping = {
-          ['<C-f>'] = cmp.mapping.scroll_docs(-4),
-          ['<C-d>'] = cmp.mapping.scroll_docs(4),
+  ['<C-f>'] = cmp.mapping.scroll_docs(-4),
+  ['<C-d>'] = cmp.mapping.scroll_docs(4),
 
-          ['<C-n>'] = cmp.mapping(function(fallback)
-            if luasnip.expand_or_jumpable() then
-              luasnip.expand_or_jump()
-              fallback()
-            end
-          end, { 'i', 's' }),
-          ['<C-p>'] = cmp.mapping(function(fallback)
-            if luasnip.jumpable(-1) then
-              luasnip.jump(-1)
-            else
-              fallback()
-            end
-          end, { 'i', 's' }),
-          ['<C-e>'] = cmp.mapping.abort(),
-          ['<c-y>'] = cmp.mapping.confirm {
-            select = true,
-          },
-          ['<CR>'] = cmp.mapping.confirm {
-            select = true,
-          },
+  ['<C-n>'] = cmp.mapping.select_next_item({ behavior = 'select' }),
+  ['<C-p>'] = cmp.mapping.select_prev_item({ behavior = 'select' }),
+  ['<C-e>'] = cmp.mapping.abort(),
+  ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item.
 
-          ['<Tab>'] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-              cmp.select_next_item()
-            elseif has_words_before() then
-              cmp.complete()
-            else
-              fallback()
-            end
-          end, { 'i', 's' }),
-          ['<S-Tab>'] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-              cmp.select_prev_item()
-            else
-              fallback()
-            end
-          end, { 'i', 's' }),
-
-          ['<C-l>'] = cmp.mapping(function()
-            if luasnip.expand_or_locally_jumpable() then
-              luasnip.expand_or_jump()
-            end
-          end, { 'i', 's' }),
-          ['<C-h>'] = cmp.mapping(function()
-            if luasnip.locally_jumpable(-1) then
-              luasnip.jump(-1)
-            end
-          end, { 'i', 's' }),
-        },
+  -- Tab for snippet expansion ONLY
+  ['<Tab>'] = cmp.mapping(function(fallback)
+    if luasnip.expand_or_jumpable() then
+      luasnip.expand_or_jump()
+    else
+      fallback()
+    end
+  end, { 'i', 's' }),
+  --
+  -- ['<S-Tab>'] = cmp.mapping(function(fallback)
+  --   if cmp.visible() then
+  --     cmp.select_prev_item()
+  --   else
+  --     fallback()
+  --   end
+  -- end, { 'i', 's' }),
+  --
+  -- -- Manual completion menu trigger
+  ['<C-Space>'] = cmp.mapping.complete(),
+},
         autocomplete = false,
 
         ---@diagnostic disable-next-line: missing-fields
@@ -143,37 +171,23 @@ return {
           },
         },
       }
-
+ls.config.setup({
+    enable_autosnippets = true,
+})
       -- for friendly snippets
       require('luasnip.loaders.from_vscode').lazy_load()
       -- for custom snippets
-      require('luasnip.loaders.from_vscode').lazy_load { paths = { vim.fn.stdpath 'config' .. '/snips' } }
+      -- require('luasnip.loaders.from_vscode').lazy_load { paths = { vim.fn.stdpath 'config' .. '/snips' } }
+require("luasnip.loaders.from_lua").load({paths = "~/.config/quarto-nvim-kickstarter/LuaSnip/"})
+-- print("Loaded snippets from: " .. vim.fn.expand("~/.config/quarto-nvim-kickstarter/LuaSnip/"))
+-- vim.api.nvim_command("messages")  -- This will show the print in Neovim
+
+      -- require('luasnip.loaders.from_lua').lazy_load { paths = { vim.fn.stdpath 'config' .. '/lua/snips' } }
+      -- require("luasnip.loaders.from_lua").load({paths = "/Users/user/.config/quarto-nvim-kickstarter/lua/snips"})
+      -- print("LuaSnip Lua loaders are being loaded from: " .. vim.fn.stdpath 'config' .. '/lua/snips')
       -- link quarto and rmarkdown to markdown snippets
       luasnip.filetype_extend('quarto', { 'markdown' })
       luasnip.filetype_extend('rmarkdown', { 'markdown' })
     end,
-  },
-
-  { -- gh copilot
-    'zbirenbaum/copilot.lua',
-    enabled = false,
-    config = function()
-      require('copilot').setup {
-        suggestion = {
-          enabled = true,
-          auto_trigger = true,
-          debounce = 75,
-          keymap = {
-            accept = '<c-a>',
-            accept_word = false,
-            accept_line = false,
-            next = '<M-]>',
-            prev = '<M-[>',
-            dismiss = '<C-]>',
-          },
-        },
-        panel = { enabled = false },
-      }
-    end,
-  },
+  }
 }
