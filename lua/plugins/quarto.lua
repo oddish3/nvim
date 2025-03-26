@@ -11,7 +11,7 @@ return {
       -- for language features in code cells
       -- configured in lua/plugins/lsp.lua and
       -- added as a nvim-cmp source in lua/plugins/completion.lua
-      'jmbuhr/otter.nvim',
+      -- 'jmbuhr/otter.nvim',
     },
   },
   {
@@ -19,6 +19,7 @@ return {
     -- enabled = false,
      -- Only required if you also set defaults.lazy = true
     lazy = false,
+    -- version = "~0.9.0",
     -- R.nvim is still young and we may make some breaking changes from time
     -- to time (but also bug fixes all the time). If configuration stability
     -- is a high priority for you, pin to the latest minor version, but unpin

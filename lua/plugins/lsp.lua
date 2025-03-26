@@ -1,26 +1,27 @@
 
 return {
-  {
-
-    -- for lsp features in code cells / embedded code
-    'jmbuhr/otter.nvim',
-    enable = false,
-    dev = false,
-    dependencies = {
-      {
-        'neovim/nvim-lspconfig',
-        'nvim-treesitter/nvim-treesitter',
-      },
-    },
-    opts = {
-      verbose = {
-        no_code_found = false,
-      }
-    },
-  },
+  -- {
+  --
+  --   -- for lsp features in code cells / embedded code
+  --   'jmbuhr/otter.nvim',
+  --   enable = false,
+  --   dev = false,
+  --   dependencies = {
+  --     {
+  --       'neovim/nvim-lspconfig',
+  --       'nvim-treesitter/nvim-treesitter',
+  --     },
+  --   },
+  --   opts = {
+  --     verbose = {
+  --       no_code_found = false,
+  --     }
+  --   },
+  -- },
 
   {
     'neovim/nvim-lspconfig',
+    -- event = "LspAttach",
         -- enable = false,
     dependencies = {
       { 'williamboman/mason.nvim' },

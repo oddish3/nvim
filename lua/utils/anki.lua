@@ -1,55 +1,6 @@
 local M = {}
 
---- Parse default deck and tags from the marker line
---- @param line string The line containing default deck/tags
---- @return table Table containing parsed deck and tags
-local function parse_defaults(line)
-  -- Default values
-  local defaults = {
-    deck = 'Default',
-    tags = {},
-    use_markdown = true,
-  }
-
-  if not line or vim.trim(line) == '' then
-    return defaults
-  end
-
-  -- More robust splitting to handle complex cases
-  local parts = {}
-  local first_part = line:match('^([^/]+)')
-  
-  if first_part then
-    defaults.deck = vim.trim(first_part)
-  end
-
-  -- Extract remaining parts after the first '/'
-  local remainder = line:match('^[^/]+/(.+)$')
-  
-  if remainder then
-    -- Split remaining parts and process
-    for part in remainder:gmatch('[^/]+') do
-      local trimmed_part = vim.trim(part)
-      
-      -- Check for option settings
-      local option_name, option_value = trimmed_part:match '^(%w+):%s*(%w+)$'
-      if option_name and option_value then
-        if option_name == 'markdown' then
-          defaults.use_markdown = option_value == 'true'
-        end
-      elseif trimmed_part ~= '' then
-        table.insert(defaults.tags, trimmed_part)
-      end
-    end
-  end
-
-  return defaults
-end
-
---- Process text with math delimiter conversion
---- @param text string Text to process
---- @return string Processed text
-local function process_text(text)
+function process_text(text)
   -- Keep track of our position in the string and build result
   local result = ''
   local pos = 1
@@ -121,227 +72,154 @@ local function process_text(text)
   return result
 end
 
---- Parse and extract a Q/A pair from lines
---- @param all_lines table Array of lines
---- @param q_start number Start line of question
---- @param a_start number Start line of answer
---- @param end_index number End line of the Q/A pair
---- @param use_markdown boolean Whether to use markdown formatting
---- @return table Table containing question and answer texts
-local function extract_qa_pair(all_lines, q_start, a_start, end_index, use_markdown)
-  -- Extract the Q/A pair
-  local q_lines = {}
-  for i = q_start, a_start - 1 do
-    table.insert(q_lines, all_lines[i])
-  end
 
-  local a_lines = {}
-  for i = a_start, end_index do
-    table.insert(a_lines, all_lines[i])
-  end
+-- This function processes the current buffer's block of text and creates notes
+function M.create_notes()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local all_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  local total_lines = #all_lines
+  if total_lines == 0 then return end
 
-  -- Format the question and answer
-  local q_text = q_lines[1]:match '^Q: (.*)' or ''
-  if #q_lines > 1 then
-    local additional_q_lines = {}
-    for i = 2, #q_lines do
-      table.insert(additional_q_lines, q_lines[i])
-    end
-    q_text = q_text .. '\n' .. table.concat(additional_q_lines, '\n')
-  end
+  -- Determine the block boundaries based on the current line.
+  local current_line = vim.fn.line('.')  -- 1-indexed
+  local start_idx, end_idx = current_line, current_line
 
-  local a_text = a_lines[1]:match '^A: (.*)' or ''
-  if #a_lines > 1 then
-    local additional_a_lines = {}
-    for i = 2, #a_lines do
-      table.insert(additional_a_lines, a_lines[i])
-    end
-    a_text = a_text .. '\n' .. table.concat(additional_a_lines, '\n')
-  end
-
-  -- Process text with math delimiter conversion if needed
-  if use_markdown then
-    q_text = process_text(q_text)
-    a_text = process_text(a_text)
-  end
-
-  return { question = q_text, answer = a_text }
-end
-
---- Format a note using the template
---- @param deck string Deck name
---- @param tags string Tags string
---- @param question string Question text
---- @param answer string Answer text
---- @param use_markdown boolean Whether to use markdown formatting
---- @return string Formatted note
-local function format_note(deck, tags, question, answer, use_markdown)
-  -- Define the template for each note
-  local template = table.concat({
-    '# Note',
-    'model: Basic',
-    'deck: {deck}',
-    'tags: {tags}',
-    'markdown: {markdown}',
-    '',
-    '## Front',
-    '{q}',
-    '',
-    '## Back',
-    '{a}',
-  }, '\n')
-
-  -- Apply the template
-  local note =
-    template:gsub('{deck}', deck):gsub('{tags}', tags):gsub('{markdown}', tostring(use_markdown)):gsub('{q}', question):gsub('{a}', answer):gsub('  \n', '\n\n') -- Replace double spaces before newlines with blank lines
-
-  return note
-end
-
---- Find all Q/A pairs in a section
---- @param all_lines table Array of lines
---- @param section_start number Start line of the section
---- @param section_end number End line of the section
---- @return table Array of tables with q_start, a_start, and end_index
-local function find_all_qa_pairs(all_lines)
-  local pairs = {}
-  local q_start = nil
-  local a_start = nil
-
-  for i = 1, #all_lines do
-    local line = all_lines[i]
-
-    if line and line:match '^Q:' then
-      if q_start and not a_start then
-        vim.notify('Warning: Question at line ' .. q_start .. ' has no answer', vim.log.levels.WARN)
-      end
-      q_start = i
-      a_start = nil
-    elseif line and line:match '^A:' and q_start and not a_start then
-      a_start = i
-      local end_index = #all_lines
-      
-      for j = a_start + 1, #all_lines do
-        if all_lines[j] and all_lines[j]:match '^Q:' then
-          end_index = j - 1
-          break
-        end
-      end
-
-      table.insert(pairs, {
-        q_start = q_start,
-        a_start = a_start,
-        end_index = end_index,
-      })
-    end
-  end
-
-  if q_start and not a_start then
-    vim.notify('Warning: Question at line ' .. q_start .. ' has no answer', vim.log.levels.WARN)
-  end
-
-  return pairs
-end
-
---- Creates notes from all Q/A pairs in the buffer
---- @param options table Optional settings (use_markdown)
---- @return nil
-function M.create_notes(options)
-  options = options or {}
-  local force_markdown = options.markdown
-
-  -- Get all lines from the buffer
-  local all_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-
-  -- Find all Q/A pairs in the entire buffer
-  local qa_pairs = find_all_qa_pairs(all_lines)
-
-  if #qa_pairs == 0 then
-    vim.notify('No Q/A pairs found in buffer', vim.log.levels.WARN)
-    return
-  end
-
-  -- Find default settings from first non-QA line at top of file
-  local default_settings = parse_defaults('')
-  for i = 1, #all_lines do
-    local line = all_lines[i]
-    if line and not line:match '^[QA]:' then
-      default_settings = parse_defaults(line)
+  -- Go upward until an empty line or beginning of file
+  for i = current_line, 1, -1 do
+    if all_lines[i]:match("^%s*$") then
+      start_idx = i + 1
       break
+    elseif i == 1 then
+      start_idx = 1
     end
   end
 
-  -- Get default settings
-  local section_deck = default_settings.deck
-  local section_tags = table.concat(default_settings.tags, ' ')
-  local section_use_markdown = force_markdown or default_settings.use_markdown
+  -- Go downward until an empty line or end of file
+  for i = current_line, total_lines do
+    if all_lines[i]:match("^%s*$") then
+      end_idx = i - 1
+      break
+    elseif i == total_lines then
+      end_idx = total_lines
+    end
+  end
 
-  -- Process each Q/A pair and generate formatted notes
-  local all_notes = {}
-  local previous_end = 0
+  -- Get the block of lines that defines our note(s)
+  local block_lines = {}
+  for i = start_idx, end_idx do
+    table.insert(block_lines, all_lines[i])
+  end
 
-  for _, pair in ipairs(qa_pairs) do
-    -- Look for override lines between previous pair's end and current pair's start
-    local override_settings = nil
-    for i = previous_end + 1, pair.q_start - 1 do
-      local line = all_lines[i]
-      if line and line:match '%S' and not line:match '^[QA]:' then
-        override_settings = parse_defaults(line)
+  if #block_lines == 0 then return end
+
+  -- Parse the first line for model/deck/tags info.
+  -- Format should be: model/deck/tags
+  local category_line = table.remove(block_lines, 1)
+  local model, deck, tags = "Basic", "Default", ""
+  local parts = {}
+  for part in string.gmatch(category_line, "[^/]+") do
+    table.insert(parts, vim.trim(part))
+  end
+  if #parts >= 1 and parts[1] ~= "" then
+    model = parts[1]
+  end
+  if #parts >= 2 and parts[2] ~= "" then
+    deck = parts[2]
+  end
+  if #parts >= 3 and parts[3] ~= "" then
+    tags = parts[3]
+  end
+
+  -- Parse the rest of the block for Q/A entries.
+  -- Optionally, allow a line starting with "tags:" to override tags.
+  local notes = {}
+  local current_note = { q = {}, a = {}, tags = tags }
+  local mode = nil -- "q" for question, "a" for answer
+  for _, line in ipairs(block_lines) do
+    if vim.startswith(line, "tags:") then
+      local new_tags = line:match("^tags:%s*(.*)")
+      if new_tags and new_tags ~= "" then
+        current_note.tags = new_tags
+      end
+    elseif vim.startswith(line, "Q:") then
+      -- If there is an existing note, store it and start a new one.
+      if (#current_note.q > 0 or #current_note.a > 0) then
+        table.insert(notes, current_note)
+        current_note = { q = {}, a = {}, tags = tags }
+      end
+      mode = "q"
+      local qline = line:sub(4) -- drop "Q:" and following space
+      table.insert(current_note.q, vim.trim(qline))
+    elseif vim.startswith(line, "A:") then
+      mode = "a"
+      local aline = line:sub(4) -- drop "A:" and following space
+      table.insert(current_note.a, vim.trim(aline))
+    else
+      if mode == "q" then
+        table.insert(current_note.q, line)
+      elseif mode == "a" then
+        table.insert(current_note.a, line)
+      end
+    end
+  end
+  if (#current_note.q > 0 or #current_note.a > 0) then
+    table.insert(notes, current_note)
+  end
+
+  -- Define the template for the note.
+  local template = [[
+# Note
+model: %s
+deck: %s
+tags: %s
+markdown: true
+
+## Front
+%s
+
+## Back
+%s
+]]
+    local new_notes = {}
+
+  for _, note in ipairs(notes) do
+    -- Process question and answer with process_text
+    local question = process_text(table.concat(note.q, "\n"))
+    local answer = process_text(table.concat(note.a, "\n"))
+    local note_str = string.format(template, model, deck, note.tags, question, answer)
+    table.insert(new_notes, note_str)
+  end
+
+  -- Helper function to split note_str into lines while preserving empty lines
+  local function split_lines(str)
+    local lines = {}
+    if #str == 0 then return lines end
+    local pos = 1
+    while pos <= #str do
+      local nl_pos = str:find('\n', pos)
+      if not nl_pos then
+        table.insert(lines, str:sub(pos))
         break
       end
+      table.insert(lines, str:sub(pos, nl_pos - 1))
+      pos = nl_pos + 1
     end
-
-    -- Use override settings if available
-    local qa_deck = override_settings and override_settings.deck or section_deck
-    local qa_tags = override_settings and table.concat(override_settings.tags, ' ') or section_tags
-    local qa_use_markdown = force_markdown or (override_settings and override_settings.use_markdown) or section_use_markdown
-
-    -- Extract and format Q/A pair
-    local qa_pair = extract_qa_pair(all_lines, pair.q_start, pair.a_start, pair.end_index, qa_use_markdown)
-    local note = format_note(qa_deck, qa_tags, qa_pair.question, qa_pair.answer, qa_use_markdown)
-
-    table.insert(all_notes, {
-      pair = pair,
-      note_lines = vim.split(note, '\n'),
-    })
-
-    previous_end = pair.end_index
+    return lines
   end
 
-  -- Generate new buffer content
-  local new_content = {}
-  local current_pos = 1
-
-  for _, note_info in ipairs(all_notes) do
-    local pair = note_info.pair
-
-    -- Add content between current position and this pair
-    for i = current_pos, pair.q_start - 1 do
-      table.insert(new_content, all_lines[i])
-    end
-
-    -- Add formatted note
-    vim.list_extend(new_content, note_info.note_lines)
-    table.insert(new_content, '')  -- Add blank line after note
-
-    current_pos = pair.end_index + 1
+  -- Prepare new block with correct line splitting
+  local new_block = {}
+  for _, note_str in ipairs(new_notes) do
+    local lines = split_lines(note_str)
+    vim.list_extend(new_block, lines)
+    table.insert(new_block, "")  -- Add blank line between notes
   end
 
-  -- Add remaining content after last pair
-  for i = current_pos, #all_lines do
-    table.insert(new_content, all_lines[i])
-  end
-
-  -- Update buffer
-  vim.api.nvim_buf_set_lines(0, 0, -1, false, new_content)
-  vim.cmd 'update'
-end
-
--- Add a new function specifically to process all Q/A pairs in the section
-function M.create_all_notes(options)
-  options = options or {}
-  options.process_all = true
-  M.create_notes(options)
+  -- Replace the original block in the buffer with the new block
+  vim.api.nvim_buf_set_lines(bufnr, start_idx - 1, end_idx, false, new_block)
+  -- Optionally, move the cursor back to the start of the block
+  vim.api.nvim_win_set_cursor(0, {start_idx, 0})
+  vim.cmd("update")
 end
 
 -- Function to copy clipboard image to Anki media and insert markdown link
@@ -430,12 +308,12 @@ function M.run_apy_update_from_file()
 end
 
 -- Export functions to the global scope for keymap access
-_G.create_all_notes = M.create_all_notes
+_G.create_notes = M.create_notes
 _G.paste_image_to_anki = M.paste_image_to_anki
 _G.run_apy_add_from_file = M.run_apy_add_from_file
 _G.run_apy_update_from_file = M.run_apy_update_from_file
 
-vim.keymap.set('n', '<leader>ac', '<cmd>lua create_all_notes()<CR>', { noremap = true, silent = true, desc = '[C]reate Notes' })
+vim.keymap.set('n', '<leader>ac', '<cmd>lua create_notes()<CR>', { noremap = true, silent = true, desc = '[C]reate Notes' })
 vim.keymap.set('n', '<leader>ap', '<cmd>lua paste_image_to_anki()<CR>', { noremap = true, silent = true, desc = '[P]aste image' })
 vim.keymap.set('n', '<leader>aa', '<cmd>lua run_apy_add_from_file()<CR>', { noremap = true, silent = true, desc = '[A]dd notes' })
 vim.keymap.set('n', '<leader>au', '<cmd>lua run_apy_update_from_file()<CR>', { noremap = true, silent = true, desc = '[U]pdate from note' })

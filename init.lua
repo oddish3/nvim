@@ -387,7 +387,7 @@ categories:
     if #lines == 0 or lines[1] ~= "---" then
       -- Insert front matter at the top
       vim.api.nvim_buf_set_lines(0, 0, 0, false, vim.split(header, "\n"))
-      print("Inserted YAML front matter.")
+      -- print("Inserted YAML front matter.")
     end
   end,
 })
