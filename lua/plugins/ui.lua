@@ -9,13 +9,97 @@ return {
       -- { 'nvim-telescope/telescope-dap.nvim' },
       {
         'jmbuhr/telescope-zotero.nvim',
-        enabled = true,
-        dev = false,
         dependencies = {
           { 'kkharji/sqlite.lua' },
         },
         config = function()
+          -- Create a module-level variable to track the current mode
+          local use_locate_function = false
+          local default_bib_path = '/Users/user/repos/quartz/content/bib.bib'
+
+          -- Define a utility function that handles either approach
+          local function get_bib_location()
+            print('[DEBUG] Entering get_bib_location. use_locate_function =', use_locate_function)
+
+            if use_locate_function then
+              print '[DEBUG] use_locate_function is true. Attempting to use locate function.'
+              local bib = require 'zotero.bib'
+              local path = bib.locate_quarto_bib()
+              print('[DEBUG] locate_quarto_bib returned:', path)
+
+              -- If the path is relative (doesn't start with '/'), convert it to an absolute path
+              if not path:match '^/' then
+                local dir = vim.fn.expand '%:p:h' -- Get the directory of the current file
+                path = dir .. '/' .. path
+                print('[DEBUG] Converted relative path to absolute path:', path)
+              end
+
+              local abs_path = vim.fn.expand(path, ':p')
+              print('[DEBUG] Expanded absolute path is:', abs_path)
+
+              local readable = vim.fn.filereadable(abs_path)
+              print('[DEBUG] File readability check returned:', readable, 'for', abs_path)
+              if abs_path and readable == 1 then
+                print('[DEBUG] File is readable at path:', abs_path)
+                return abs_path
+              end
+
+              -- If not found, try to find references.bib in the current directory
+              local current_dir = vim.fn.expand '%:p:h'
+              local references_path = current_dir .. '/references.bib'
+              print('[DEBUG] Checking for references.bib in current directory at:', references_path)
+
+              if vim.fn.filereadable(references_path) == 1 then
+                print('[DEBUG] Found readable references file at:', references_path)
+                return references_path
+              end
+
+              vim.notify('Could not locate bibliography file, falling back to default path', vim.log.levels.WARN)
+              print('[DEBUG] Falling back to default_bib_path:', default_bib_path)
+              return default_bib_path
+            else
+              print('[DEBUG] use_locate_function is false. Using default_bib_path:', default_bib_path)
+              return default_bib_path
+            end
+          end
+
+          -- Function to toggle between the two modes
+          local function toggle_bib_location_mode()
+            use_locate_function = not use_locate_function
+            local mode = use_locate_function and 'locate function' or 'fixed path'
+            vim.notify('Zotero bib location mode: ' .. mode, vim.log.levels.INFO)
+          end
+
+          -- Make the toggle function available globally
+          _G.toggle_zotero_bib_mode = toggle_bib_location_mode
+
+          require('zotero').setup {
+            ft = {
+              md = {
+                insert_key_formatter = function(citekey)
+                  return '@' .. citekey
+                end,
+                locate_bib = function()
+                  return get_bib_location()
+                end,
+              },
+              default = {
+                insert_key_formatter = function(citekey)
+                  return '@' .. citekey
+                end,
+                locate_bib = function()
+                  return get_bib_location()
+                end,
+              },
+            },
+          }
+          require('telescope').load_extension 'zotero'
+
+          -- Set up keybindings
           vim.keymap.set('n', '<leader>fz', ':Telescope zotero<cr>', { desc = '[z]otero' })
+          vim.keymap.set('n', '<leader>zt', function()
+            _G.toggle_zotero_bib_mode()
+          end, { desc = '[z]otero [t]oggle bib mode' })
         end,
       },
     },
@@ -95,10 +179,10 @@ return {
             require('telescope.themes').get_dropdown(),
           },
           fzf = {
-            fuzzy = true,                   -- false will only do exact matching
+            fuzzy = true, -- false will only do exact matching
             override_generic_sorter = true, -- override the generic sorter
-            override_file_sorter = true,    -- override the file sorter
-            case_mode = 'smart_case',       -- or "ignore_case" or "respect_case"
+            override_file_sorter = true, -- override the file sorter
+            case_mode = 'smart_case', -- or "ignore_case" or "respect_case"
           },
         },
       }
@@ -129,7 +213,7 @@ return {
     },
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     keys = {
-      { '-',          ':Oil<cr>', desc = 'oil' },
+      { '-', ':Oil<cr>', desc = 'oil' },
       { '<leader>ef', ':Oil<cr>', desc = 'edit [f]iles' },
     },
     cmd = 'Oil',
@@ -191,7 +275,7 @@ return {
   },
 
   {
-    "NStefan002/screenkey.nvim",
+    'NStefan002/screenkey.nvim',
     lazy = false,
   },
 
@@ -238,7 +322,7 @@ return {
   -- show keybinding help window
   {
     'folke/which-key.nvim',
-    enabled = true,
+    -- enabled = false,
     config = function()
       require('which-key').setup {}
       require 'config.keymap'
@@ -253,7 +337,7 @@ return {
     },
     opts = {
       providers = {
-        priority = { 'markdown', 'lsp',  'norg' },
+        priority = { 'markdown', 'lsp', 'norg' },
         -- Configuration for each provider (3rd party providers are supported)
         lsp = {
           -- Lsp client names to ignore
@@ -316,7 +400,6 @@ return {
       indent = { char = '│' },
     },
   },
-
   { -- highlight markdown headings and code blocks etc.
     'lukas-reineke/headlines.nvim',
     enabled = false,
@@ -353,10 +436,10 @@ return {
     ft = { 'markdown', 'quarto', 'vimwiki' },
     cond = function()
       -- Disable on Windows system
-       return vim.fn.has 'win32' ~= 1 
+      return vim.fn.has 'win32' ~= 1
     end,
     dependencies = {
-       'leafo/magick', -- that's a lua rock
+      'leafo/magick', -- that's a lua rock
     },
     config = function()
       -- Requirements
@@ -372,11 +455,43 @@ return {
       local image = require 'image'
       image.setup {
         backend = 'kitty',
+        kitty_method = 'direct', -- Try 'direct' instead of 'normal'
+        kitty_tmux_fallback = true,
+        clear_in_insert_mode = true,
+        window_overlap_clear_enabled = true,
+        window_overlap_clear_ft_ignore = { 'cmp_menu', 'cmp_docs', 'scrollview', 'scrollview_sign' },
         integrations = {
           markdown = {
             enabled = true,
             only_render_image_at_cursor = true,
             -- only_render_image_at_cursor_mode = "popup",
+            resolve_image_path = function(document_path, image_path, fallback)
+              -- Print debugging information
+              -- print("Document path: " .. document_path)
+              -- print("Image path: " .. image_path)
+
+              local anki_media = vim.fn.expand '~/Library/Application Support/Anki2/User 1/collection.media'
+
+              -- Check if the image path looks like an Anki media reference (no directories)
+              if image_path:match '^[^/\\]+%.%w+$' then
+                local full_anki_path = anki_media .. '/' .. image_path
+
+                -- print("Checking Anki path: " .. full_anki_path)
+
+                -- Check if the file exists in Anki media
+                if vim.fn.filereadable(full_anki_path) == 1 then
+                  -- print("Found image in Anki media!")
+                  return full_anki_path
+                else
+                  -- print("Image not found in Anki media")
+                end
+              end
+
+              -- Try the default behavior
+              local default_path = fallback(document_path, image_path)
+              -- print("Fallback path: " .. default_path)
+              return default_path
+            end,
             filetypes = { 'markdown', 'vimwiki', 'quarto' },
           },
         },
@@ -392,11 +507,32 @@ return {
       }
 
       local function clear_all_images()
+        -- Get current buffer
         local bufnr = vim.api.nvim_get_current_buf()
-        local images = image.get_images { buffer = bufnr }
+
+        -- First attempt: Use image.nvim's API
+        local images = require('image').get_images { buffer = bufnr }
         for _, img in ipairs(images) do
           img:clear()
         end
+
+        -- Second attempt: Force a redraw of the terminal
+        vim.cmd 'redraw!'
+
+        -- Third attempt: Send direct escape sequences to clear Kitty graphics
+        -- This uses a more aggressive approach that works with partial implementations
+        local clear_cmd = vim.fn.system 'printf "\\033[_Ga=d\\033\\\\"'
+        vim.fn.chansend(vim.v.stderr, clear_cmd)
+
+        -- Fourth attempt: Refresh buffer display
+        vim.cmd 'edit'
+
+        -- Fifth attempt: Toggle terminal mode briefly (helps with some terminals)
+        vim.cmd 'terminal'
+        vim.cmd 'bdelete!'
+
+        -- Final attempt: Force garbage collection
+        collectgarbage 'collect'
       end
 
       local function get_image_at_cursor(buf)
@@ -442,12 +578,12 @@ return {
         image.hijack_buffer(img.path, preview.win, preview.buf)
       end
 
-      vim.keymap.set('n', '<leader>io', function()
-        local bufnr = vim.api.nvim_get_current_buf()
-        handle_zoom(bufnr)
-      end, { buffer = true, desc = 'image [o]pen' })
+      -- vim.keymap.set('n', '<leader>io', function()
+      --   local bufnr = vim.api.nvim_get_current_buf()
+      --   handle_zoom(bufnr)
+      -- end, { buffer = true, desc = 'image [o]pen' })
 
-      vim.keymap.set('n', '<leader>ic', clear_all_images, { desc = 'image [c]lear' })
+      -- vim.keymap.set('n', '<leader>ic', clear_all_images, { desc = 'image [c]lear' })
     end,
   },
 }

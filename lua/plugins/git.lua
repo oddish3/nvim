@@ -6,6 +6,7 @@ return {
   -- handy git ui
   {
     'NeogitOrg/neogit',
+    -- version = '1.0.0',
     lazy = true,
     cmd = 'Neogit',
     keys = {

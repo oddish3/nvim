@@ -9,6 +9,7 @@ local function get_directories()
     -- Static paths to always include
     local static_paths = {
         "/Users/user/repos/quartz/content/",
+        "/Users/user/repos/scripts/",
         "/Users/user/repos/quartz",
     }
     

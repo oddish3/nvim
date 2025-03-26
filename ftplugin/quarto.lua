@@ -33,7 +33,7 @@ end
 local buf = api.nvim_get_current_buf()
 
 local parsername = 'markdown'
-local parser = ts.get_parser(buf, parsername)
+local parser = ts.get_parser(buf, 'markdown')
 local tsquery = '(fenced_code_block)@codecell'
 
 -- vim.api.nvim_set_hl(0, '@markup.codecell', { bg = '#000055' })

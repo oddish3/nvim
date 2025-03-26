@@ -8,7 +8,7 @@ return {
   },
   {
     "OXY2DEV/markview.nvim",
-      -- enabled = false,
+      enabled = false,
     lazy = false
   },
 {
@@ -26,16 +26,21 @@ return {
   ft = { "markdown" },
 },
   {
-  "jalvesaq/zotcite",
+    dir = "/Users/user/repos/public/zotcite",
+  -- "jalvesaq/zotcite",
+    -- enabled = false,
   dependencies = {
     "nvim-treesitter/nvim-treesitter",
     "nvim-telescope/telescope.nvim",
   },
-  lazy = false,
+  -- lazy = false,
   config = function()
-    vim.defer_fn(function()
-      require("zotcite").setup({})
-    end, 100) -- Delay setup slightly
+      require("zotcite").setup({
+        python_path = "python3",
+        pdf_extractor = "pdfnotes2.py",
+        obsidian_vault_path = "/Users/user/repos/quartz/content/references",
+        insert_obsidian_link = true
+      })
   end,
 },
   {
@@ -47,7 +52,8 @@ return {
     end,
   },
   {
-    "epwalsh/obsidian.nvim",
+    -- "epwalsh/obsidian.nvim",
+    dir = "/Users/user/repos/public/obsidian.nvim",
     -- enabled = false, 
     version = "*", -- recommended, use latest release instead of latest commit
     lazy = true,
@@ -221,16 +227,16 @@ return {
         end
 
         -- Check if Creation Date already exists in metadata
-        if note.metadata and note.metadata["Creation Date"] then
+                if note.metadata and note.metadata["Creation Date"] then
           -- Use existing Creation Date
-          out["Creation Date"] = note.metadata["Creation Date"]
+          out["date"] = note.metadata["Creation Date"]
         else
           -- Set new Creation Date only if it doesn't exist
-          out["Creation Date"] = os.date("%Y-%m-%dT%H:%M:%S", current_time)
+          out["date"] = os.date("%Y-%m-%dT%H:%M:%S", current_time)
         end
 
         -- Always update Last Date
-        out["Last Date"] = os.date("%Y-%m-%dT%H", current_time)
+        out['Last Date'] = os.date("%Y-%m-%dT%H:%M:%S", current_time)
 
         return out
       end,

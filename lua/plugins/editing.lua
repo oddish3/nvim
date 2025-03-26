@@ -41,14 +41,25 @@ return {
         -- },
         formatters_by_ft = {
           lua = { 'mystylua' },
-          python = { 'isort', 'black' },
+          python = { 'black' },
           quarto = { 'injected' },
+          r = { 'air' },
         },
         formatters = {
           mystylua = {
             command = 'stylua',
             args = { '--indent-type', 'Spaces', '--indent-width', '2', '-' },
           },
+          air = {
+            command = 'air',
+            args = { "format", "$FILENAME" },
+            stdin = false,
+          },
+          black = {
+            command = 'black',
+            args = { '-' },
+            stdin = true,  -- ensure Black reads from STDIN
+          }
         },
       }
       -- Customize the "injected" formatter

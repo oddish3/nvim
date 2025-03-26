@@ -116,6 +116,9 @@ vim.filetype.add {
   extension = {
     ojs = 'javascript',
   },
+  pattern = {
+    ['.*%.qmd'] = 'quarto', -- Keep quarto filetype for qmd files
+  }
 }
 
 -- additional builtin vim packages

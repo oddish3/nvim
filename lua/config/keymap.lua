@@ -49,6 +49,8 @@ imap(';', ';<c-g>u')
 
 nmap('Q', '<Nop>')
 
+nmap('<leader>x', '<cmd>!chmod +x %<CR>')
+
 --- Send code to terminal with vim-slime
 --- If an R terminal has been opend, this is in r_mode
 --- and will handle python code via reticulate when sent
@@ -108,10 +110,10 @@ end
 -- needs kitty (or other terminal) config:
 -- map shift+enter send_text all \x1b[13;2u
 -- map ctrl+enter send_text all \x1b[13;5u
-nmap('<c-cr>', send_cell)
-nmap('<s-cr>', send_cell)
-imap('<c-cr>', send_cell)
-imap('<s-cr>', send_cell)
+-- nmap('<c-cr>', send_cell)
+-- nmap('<s-cr>', send_cell)
+-- imap('<c-cr>', send_cell)
+-- imap('<s-cr>', send_cell)
 
 --- Show R dataframe in the browser
 -- might not use what you think should be your default web browser
@@ -204,51 +206,51 @@ end
 
 -- normal mode
 wk.add({
-    { "<c-LeftMouse>", "<cmd>lua vim.lsp.buf.definition()<CR>", desc = "go to definition" },
-    { "<c-q>", "<cmd>q<cr>", desc = "close buffer" },
-    { "<cm-i>", insert_py_chunk, desc = "python code chunk" },
-    { "<esc>", "<cmd>noh<cr>", desc = "remove search highlight" },
-    { "<m-I>", insert_py_chunk, desc = "python code chunk" },
-    { "<m-i>", insert_r_chunk, desc = "r code chunk" },
-    { "[q", ":silent cprev<cr>", desc = "[q]uickfix prev" },
-    { "]q", ":silent cnext<cr>", desc = "[q]uickfix next" },
-    { "gN", "Nzzzv", desc = "center search" },
-    { "gf", ":e <cfile><CR>", desc = "edit file" },
-    { "gl", "<c-]>", desc = "open help link" },
-    { "n", "nzzzv", desc = "center search" },
-    { "z?", ":setlocal spell!<cr>", desc = "toggle [z]pellcheck" },
-    { "zl", ":Telescope spell_suggest<cr>", desc = "[l]ist spelling suggestions" },
+  { '<c-LeftMouse>', '<cmd>lua vim.lsp.buf.definition()<CR>', desc = 'go to definition' },
+  { '<c-q>', '<cmd>q<cr>', desc = 'close buffer' },
+  { '<cm-i>', insert_py_chunk, desc = 'python code chunk' },
+  { '<esc>', '<cmd>noh<cr>', desc = 'remove search highlight' },
+  { '<m-I>', insert_py_chunk, desc = 'python code chunk' },
+  -- { "<leader>d", insert_r_chunk, desc = "r code chunk" },
+  { '[q', ':silent cprev<cr>', desc = '[q]uickfix prev' },
+  { ']q', ':silent cnext<cr>', desc = '[q]uickfix next' },
+  { 'gN', 'Nzzzv', desc = 'center search' },
+  { 'gf', ':e <cfile><CR>', desc = 'edit file' },
+  { 'gl', '<c-]>', desc = 'open help link' },
+  { 'n', 'nzzzv', desc = 'center search' },
+  { 'z?', ':setlocal spell!<cr>', desc = 'toggle [z]pellcheck' },
+  { 'zl', ':Telescope spell_suggest<cr>', desc = '[l]ist spelling suggestions' },
 }, { mode = 'n', silent = true })
 
 -- visual mode
-wk.add({
-    {
-      mode = { "v" },
-      { ".", ":norm .<cr>", desc = "repat last normal mode command" },
-      { "<M-j>", ":m'>+<cr>`<my`>mzgv`yo`z", desc = "move line down" },
-      { "<M-k>", ":m'<-2<cr>`>my`<mzgv`yo`z", desc = "move line up" },
-      { "<cr>", send_region, desc = "run code region" },
-      { "q", ":norm @q<cr>", desc = "repat q macro" },
-    },
-})
+wk.add {
+  {
+    mode = { 'v' },
+    { '.', ':norm .<cr>', desc = 'repat last normal mode command' },
+    { '<M-j>', ":m'>+<cr>`<my`>mzgv`yo`z", desc = 'move line down' },
+    { '<M-k>', ":m'<-2<cr>`>my`<mzgv`yo`z", desc = 'move line up' },
+    { '<cr>', send_region, desc = 'run code region' },
+    { 'q', ':norm @q<cr>', desc = 'repat q macro' },
+  },
+}
 
 -- visual with <leader>
 wk.add({
-    { "<leader>d", '"_d', desc = "delete without overwriting reg", mode = "v" },
-    { "<leader>p", '"_dP', desc = "replace without overwriting reg", mode = "v" },
+  -- { "<leader>d", '"_d', desc = "delete without overwriting reg", mode = "v" },
+  -- { "<leader>p", '"_dP', desc = "replace without overwriting reg", mode = "v" },
 }, { mode = 'v' })
 
 -- insert mode
 wk.add({
-    {
-      mode = { "i" },
-      { "<c-x><c-x>", "<c-x><c-o>", desc = "omnifunc completion" },
-      { "<cm-i>", insert_py_chunk, desc = "python code chunk" },
-      { "<m-->", " <- ", desc = "assign" },
-      { "<m-I>", insert_py_chunk, desc = "python code chunk" },
-      { "<m-i>", insert_r_chunk, desc = "r code chunk" },
-      { "<m-m>", " |>", desc = "pipe" },
-    },
+  {
+    mode = { 'i' },
+    { '<c-x><c-x>', '<c-x><c-o>', desc = 'omnifunc completion' },
+    { '<cm-i>', insert_py_chunk, desc = 'python code chunk' },
+    { '<m-->', ' <- ', desc = 'assign' },
+    { '<m-I>', insert_py_chunk, desc = 'python code chunk' },
+    { '<m-i>', insert_r_chunk, desc = 'r code chunk' },
+    { '<m-m>', ' |>', desc = 'pipe' },
+  },
 }, { mode = 'i' })
 
 local function new_terminal(lang)
@@ -276,10 +278,10 @@ local function new_terminal_shell()
 end
 
 local function get_otter_symbols_lang()
-  local otterkeeper = require'otter.keeper'
+  local otterkeeper = require 'otter.keeper'
   local main_nr = vim.api.nvim_get_current_buf()
   local langs = {}
-  for i,l in ipairs(otterkeeper.rafts[main_nr].languages) do
+  for i, l in ipairs(otterkeeper.rafts[main_nr].languages) do
     langs[i] = i .. ': ' .. l
   end
   -- promt to choose one of langs
@@ -288,8 +290,8 @@ local function get_otter_symbols_lang()
   local params = {
     textDocument = vim.lsp.util.make_text_document_params(),
     otter = {
-      lang = lang
-    }
+      lang = lang,
+    },
   }
   -- don't pass a handler, as we want otter to use it's own handlers
   vim.lsp.buf_request(main_nr, ms.textDocument_documentSymbol, params, nil)
@@ -297,64 +299,106 @@ end
 
 -- vim.keymap.set("n", "<leader>os", get_otter_symbols_lang, {desc = "otter [s]ymbols"})
 
+-- local anki = require('utils.anki')
+-- In your keymaps file
 
 -- normal mode with <leader>
 wk.add({
-  {  { "<leader>m", group = "Markdown" },
-    { "<leader>mt", "<cmd>MarkdownPreviewToggle<cr>", desc = "[T]oggle Preview" },
-    { "<leader>mp", "<cmd>MarkdownPreview<cr>", desc = "Start [P]review" },
-    { "<leader>ms", "<cmd>MarkdownPreviewStop<cr>", desc = "[S]top Preview" },
-    { "<leader><cr>", send_cell, desc = "run code cell" },
-    { "<leader>c", group = "[c]ode / [c]ell / [c]hunk" },
-    { "<leader>ci", new_terminal_ipython, desc = "new [i]python terminal" },
-    { "<leader>cj", new_terminal_julia, desc = "new [j]ulia terminal" },
-    { "<leader>cn", new_terminal_shell, desc = "[n]ew terminal with shell" },
-    { "<leader>cp", new_terminal_python, desc = "new [p]ython terminal" },
-    { "<leader>cr", new_terminal_r, desc = "new [R] terminal" },
-    { "<leader>d", group = "[d]ebug" },
-    { "<leader>dt", group = "[t]est" },
-    { "<leader>e", group = "[e]dit" },
-    { "<leader>f", group = "[f]ind (telescope)" },
-    { "<leader>f<space>", "<cmd>Telescope buffers<cr>", desc = "[ ] buffers" },
-    { "<leader>fM", "<cmd>Telescope man_pages<cr>", desc = "[M]an pages" },
-    { "<leader>fb", "<cmd>Telescope current_buffer_fuzzy_find<cr>", desc = "[b]uffer fuzzy find" },
-    { "<leader>fc", "<cmd>Telescope git_commits<cr>", desc = "git [c]ommits" },
-    { "<leader>fd", "<cmd>Telescope buffers<cr>", desc = "[d] buffers" },
-    { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "[f]iles" },
-    { "<leader>fg", "<cmd>Telescope live_grep<cr>", desc = "[g]rep" },
-    { "<leader>fh", "<cmd>Telescope help_tags<cr>", desc = "[h]elp" },
-    { "<leader>fj", "<cmd>Telescope jumplist<cr>", desc = "[j]umplist" },
-    { "<leader>fk", "<cmd>Telescope keymaps<cr>", desc = "[k]eymaps" },
-    { "<leader>fl", "<cmd>Telescope loclist<cr>", desc = "[l]oclist" },
-    { "<leader>fm", "<cmd>Telescope marks<cr>", desc = "[m]arks" },
-    { "<leader>fq", "<cmd>Telescope quickfix<cr>", desc = "[q]uickfix" },
-    { "<leader>g", group = "[g]it" },
-    { "<leader>gb", group = "[b]lame" },
-    { "<leader>gbb", ":GitBlameToggle<cr>", desc = "[b]lame toggle virtual text" },
-    { "<leader>gbc", ":GitBlameCopyCommitURL<cr>", desc = "[c]opy" },
-    { "<leader>gbo", ":GitBlameOpenCommitURL<cr>", desc = "[o]pen" },
-    { "<leader>gc", ":GitConflictRefresh<cr>", desc = "[c]onflict" },
-    { "<leader>gd", group = "[d]iff" },
-    { "<leader>gdc", ":DiffviewClose<cr>", desc = "[c]lose" },
-    { "<leader>gdo", ":DiffviewOpen<cr>", desc = "[o]pen" },
-    { "<leader>gs", ":Gitsigns<cr>", desc = "git [s]igns" },
-    { "<leader>gwc", ":lua require('telescope').extensions.git_worktree.create_git_worktree()<cr>", desc = "worktree create" },
-    { "<leader>gws", ":lua require('telescope').extensions.git_worktree.git_worktrees()<cr>", desc = "worktree switch" },
-    { "<leader>h", group = "[h]elp / [h]ide / debug" },
-    { "<leader>hc", group = "[c]onceal" },
-    { "<leader>hch", ":set conceallevel=1<cr>", desc = "[h]ide/conceal" },
-    { "<leader>hcs", ":set conceallevel=0<cr>", desc = "[s]how/unconceal" },
-    { "<leader>ht", group = "[t]reesitter" },
-    { "<leader>htt", vim.treesitter.inspect_tree, desc = "show [t]ree" },
-    { "<leader>i", group = "[i]mage" },
-    { "<leader>l", group = "[l]anguage/lsp" },
-    { "<leader>la", vim.lsp.buf.code_action, desc = "code [a]ction" },
-    { "<leader>ld", group = "[d]iagnostics" },
-    { "<leader>ldd", function() vim.diagnostic.enable(false) end, desc = "[d]isable" },
-    { "<leader>lde", vim.diagnostic.enable, desc = "[e]nable" },
-    { "<leader>le", vim.diagnostic.open_float, desc = "diagnostics (show hover [e]rror)" },
-    { "<leader>lg", ":Neogen<cr>", desc = "neo[g]en docstring" },
-    { "<leader>o", group = "[o]tter & c[o]de" },
+  {
+    { '<leader>p', group = '[P]andoc' },
+    { '<leader>pw', "<cmd>TermExec cmd='pandoc %:p -o %:p:r.docx'<CR>", desc = '[w]ord' },
+    { '<leader>pm', "<cmd>TermExec cmd='pandoc %:p -o %:p:r.md'<CR>", desc = '[m]arkdown' },
+    { '<leader>ph', "<cmd>TermExec cmd='pandoc %:p -o %:p:r.html'<CR>", desc = '[h]tml' },
+    { '<leader>pl', "<cmd>TermExec cmd='pandoc %:p -o %:p:r.tex'<CR>", desc = '[l]atex' },
+    { '<leader>pp', "<cmd>TermExec cmd='pandoc %:p -o %:p:r.pdf' open=0<CR>", desc = '[p]df' },
+    { '<leader>pv', "<cmd>TermExec cmd='zathura %:p:r.pdf &' open=0<CR>", desc = '[v]iew' },
+    { '<leader>pi', "<cmd>TermExec cmd='pandoc %:p -o %:p:r.docx --resource-path=%:p:h'<CR>", desc = 'convert to docx with [i]mages' },
+    {
+      '<leader>pb',
+      "<cmd>TermExec cmd='source /Users/user/venv/bin/activate.fish && pandoc /Users/user/repos/quartz/content/projects/EYEGEN/notes/clinical-care-overview.md -s -o /Users/user/repos/quartz/content/projects/EYEGEN/notes/clinical-care-overview.docx --citeproc --bibliography=/Users/user/repos/quartz/content/projects/EYEGEN/notes/references.bib'<CR>",
+      desc = 'convert with .[b]ib file',
+    },
+    {
+      '<leader>pz',
+      "<cmd>TermExec cmd='source /Users/user/venv/bin/activate.fish && "
+        .. "pandoc %:p -s -o %:p:r.docx -F /Users/user/repos/public/zotcite/python3/zotref.py --citep'<CR>",
+      desc = '[z]otcite export',
+    },
+    { '<leader>m', group = 'Markdown' },
+    { '<leader>mt', '<cmd>MarkdownPreviewToggle<cr>', desc = '[T]oggle Preview' },
+    { '<leader>mp', '<cmd>MarkdownPreview<cr>', desc = 'Start [P]review' },
+    { '<leader>ms', '<cmd>MarkdownPreviewStop<cr>', desc = '[S]top Preview' },
+    { '<leader>a', group = 'anki' },
+    -- { "<leader>ac", anki.create_notes(), desc = "[C]reate Notes" },
+    -- { "<leader>ap", anki.paste_image_to_anki(), desc = "[P]aste image" },
+    -- { "<leader>aa", anki.run_apy_add_from_file(), desc = "[A]dd notes" },
+    { '<leader><cr>', send_cell, desc = 'run code cell' },
+    { '<leader>c', group = '[c]ode / [c]ell / [c]hunk' },
+    {
+      '<leader>cf',
+      function()
+        local file_path = vim.fn.expand '%:p'
+        local file_dir = vim.fn.expand '%:p:h'
+        vim.notify('Current file (absolute): ' .. file_path, vim.log.levels.INFO)
+        vim.notify('Current directory (absolute): ' .. file_dir, vim.log.levels.INFO)
+      end,
+      desc = 'Print [C]urrent [F]ile/Buffer Directory (Absolute)',
+    },
+    -- { "<leader>ci", new_terminal_ipython, desc = "new [i]python terminal" },
+    -- { "<leader>cj", new_terminal_julia, desc = "new [j]ulia terminal" },
+    -- { "<leader>cn", new_terminal_shell, desc = "[n]ew terminal with shell" },
+    -- { "<leader>cp", new_terminal_python, desc = "new [p]ython terminal" },
+    -- { "<leader>cr", new_terminal_r, desc = "new [R] terminal" },
+    -- { "<leader>d", group = "[d]ebug" },
+    -- { "<leader>dt", group = "[t]est" },
+    { '<leader>e', group = '[e]dit' },
+    { '<leader>f', group = '[f]ind (telescope)' },
+    { '<leader>f<space>', '<cmd>Telescope buffers<cr>', desc = '[ ] buffers' },
+    { '<leader>fM', '<cmd>Telescope man_pages<cr>', desc = '[M]an pages' },
+    { '<leader>fb', '<cmd>Telescope current_buffer_fuzzy_find<cr>', desc = '[b]uffer fuzzy find' },
+    { '<leader>fc', '<cmd>Telescope git_commits<cr>', desc = 'git [c]ommits' },
+    { '<leader>fd', '<cmd>Telescope buffers<cr>', desc = '[d] buffers' },
+    { '<leader>ff', '<cmd>Telescope find_files<cr>', desc = '[f]iles' },
+    { '<leader>fg', '<cmd>Telescope live_grep<cr>', desc = '[g]rep' },
+    { '<leader>fh', '<cmd>Telescope help_tags<cr>', desc = '[h]elp' },
+    { '<leader>fj', '<cmd>Telescope jumplist<cr>', desc = '[j]umplist' },
+    { '<leader>fk', '<cmd>Telescope keymaps<cr>', desc = '[k]eymaps' },
+    { '<leader>fl', '<cmd>Telescope loclist<cr>', desc = '[l]oclist' },
+    { '<leader>fm', '<cmd>Telescope marks<cr>', desc = '[m]arks' },
+    { '<leader>fq', '<cmd>Telescope quickfix<cr>', desc = '[q]uickfix' },
+    { '<leader>g', group = '[g]it' },
+    { '<leader>gb', group = '[b]lame' },
+    { '<leader>gbb', ':GitBlameToggle<cr>', desc = '[b]lame toggle virtual text' },
+    { '<leader>gbc', ':GitBlameCopyCommitURL<cr>', desc = '[c]opy' },
+    { '<leader>gbo', ':GitBlameOpenCommitURL<cr>', desc = '[o]pen' },
+    { '<leader>gc', ':GitConflictRefresh<cr>', desc = '[c]onflict' },
+    { '<leader>gd', group = '[d]iff' },
+    { '<leader>gdc', ':DiffviewClose<cr>', desc = '[c]lose' },
+    { '<leader>gdo', ':DiffviewOpen<cr>', desc = '[o]pen' },
+    { '<leader>gs', ':Gitsigns<cr>', desc = 'git [s]igns' },
+    { '<leader>gwc', ":lua require('telescope').extensions.git_worktree.create_git_worktree()<cr>", desc = 'worktree create' },
+    { '<leader>gws', ":lua require('telescope').extensions.git_worktree.git_worktrees()<cr>", desc = 'worktree switch' },
+    { '<leader>h', group = '[h]elp / [h]ide / debug' },
+    { '<leader>hc', group = '[c]onceal' },
+    { '<leader>hch', ':set conceallevel=1<cr>', desc = '[h]ide/conceal' },
+    { '<leader>hcs', ':set conceallevel=0<cr>', desc = '[s]how/unconceal' },
+    { '<leader>ht', group = '[t]reesitter' },
+    { '<leader>htt', vim.treesitter.inspect_tree, desc = 'show [t]ree' },
+    { '<leader>i', group = '[i]mage' },
+    { '<leader>l', group = '[l]anguage/lsp' },
+    { '<leader>la', vim.lsp.buf.code_action, desc = 'code [a]ction' },
+    { '<leader>ld', group = '[d]iagnostics' },
+    {
+      '<leader>ldd',
+      function()
+        vim.diagnostic.enable(false)
+      end,
+      desc = '[d]isable',
+    },
+    { '<leader>lde', vim.diagnostic.enable, desc = '[e]nable' },
+    { '<leader>le', vim.diagnostic.open_float, desc = 'diagnostics (show hover [e]rror)' },
+    { '<leader>lg', ':Neogen<cr>', desc = 'neo[g]en docstring' },
+    { '<leader>o', group = '[o]tter & c[o]de' },
     -- { "<leader>oa", require'otter'.activate, desc = "otter [a]ctivate" },
     -- { "<leader>ob", insert_bash_chunk, desc = "[b]ash code chunk" },
     -- { "<leader>oc", "O# %%<cr>", desc = "magic [c]omment code chunk # %%" },
@@ -364,177 +408,262 @@ wk.add({
     -- { "<leader>oo", insert_ojs_chunk, desc = "[o]bservable js code chunk" },
     -- { "<leader>op", insert_py_chunk, desc = "[p]ython code chunk" },
     -- { "<leader>or", insert_r_chunk, desc = "[r] code chunk" },
-        { "<leader>o", group = "Obsidian" },
-        { "<leader>oo", "<cmd>ObsidianOpen<cr>", desc = "Open note" },
-        { "<leader>od", "<cmd>ObsidianDailies -10 0<cr>", desc = "Daily notes" },
-        { "<leader>op", "<cmd>ObsidianPasteImg<cr>", desc = "Paste image" },
-        { "<leader>oq", "<cmd>ObsidianQuickSwitch<cr>", desc = "Quick switch" },
-        { "<leader>os", "<cmd>ObsidianSearch<cr>", desc = "Search" },
-        { "<leader>ot", "<cmd>ObsidianTags<cr>", desc = "Tags" },
-        { "<leader>ol", "<cmd>ObsidianLinks<cr>", desc = "Links" },
-        { "<leader>ob", "<cmd>ObsidianBacklinks<cr>", desc = "Backlinks" },
-        { "<leader>om", "<cmd>ObsidianTemplate<cr>", desc = "Template" },
-        { "<leader>on", "<cmd>ObsidianQuickSwitch nav<cr>", desc = "Nav" },
-        { "<leader>or", "<cmd>ObsidianRename<cr>", desc = "Rename" },
-        { "<leader>oc", "<cmd>ObsidianTOC<cr>", desc = "Contents (TOC)" },
-        {
-          "<leader>ow",
-          function()
-            local Note = require "obsidian.note"
-            ---@type obsidian.Client
-            local client = require("obsidian").get_client()
-            assert(client)
+    { '<leader>o', group = 'Obsidian' },
+    { '<leader>oo', '<cmd>ObsidianOpen<cr>', desc = 'Open note' },
+    { '<leader>od', '<cmd>ObsidianDailies -10 0<cr>', desc = 'Daily notes' },
+    { '<leader>op', '<cmd>ObsidianPasteImg<cr>', desc = 'Paste image' },
+    { '<leader>oq', '<cmd>ObsidianQuickSwitch<cr>', desc = 'Quick switch' },
+    { '<leader>os', '<cmd>ObsidianSearch<cr>', desc = 'Search' },
+    { '<leader>ot', '<cmd>ObsidianTags<cr>', desc = 'Tags' },
+    { '<leader>ol', '<cmd>ObsidianLinks<cr>', desc = 'Links' },
+    { '<leader>ob', '<cmd>ObsidianBacklinks<cr>', desc = 'Backlinks' },
+    { '<leader>om', '<cmd>ObsidianTemplate<cr>', desc = 'Template' },
+    { '<leader>on', '<cmd>ObsidianQuickSwitch nav<cr>', desc = 'Nav' },
+    { '<leader>or', '<cmd>ObsidianRename<cr>', desc = 'Rename' },
+    { '<leader>oc', '<cmd>ObsidianTOC<cr>', desc = 'Contents (TOC)' },
+    {
+      '<leader>ow',
+      function()
+        local Note = require 'obsidian.note'
+        ---@type obsidian.Client
+        local client = require('obsidian').get_client()
+        assert(client)
+        local picker = client:picker()
+        if not picker then
+          client.log.err 'No picker configured'
+          return
+        end
+        ---@param dt number
+        ---@return obsidian.Path
+        local function weekly_note_path(dt)
+          return client.dir / os.date('weekly/week-of-%Y-%m-%d.md', dt)
+        end
+        ---@param dt number
+        ---@return string
+        local function weekly_alias(dt)
+          local alias = os.date('Week of %A %B %d, %Y', dt)
+          assert(type(alias) == 'string')
+          return alias
+        end
+        local day_of_week = os.date '%A'
+        assert(type(day_of_week) == 'string')
+        ---@type integer
+        local offset_start
+        if day_of_week == 'Sunday' then
+          offset_start = 1
+        elseif day_of_week == 'Monday' then
+          offset_start = 0
+        elseif day_of_week == 'Tuesday' then
+          offset_start = -1
+        elseif day_of_week == 'Wednesday' then
+          offset_start = -2
+        elseif day_of_week == 'Thursday' then
+          offset_start = -3
+        elseif day_of_week == 'Friday' then
+          offset_start = -4
+        elseif day_of_week == 'Saturday' then
+          offset_start = 2
+        end
+        assert(offset_start)
+        local current_week_dt = os.time() + (offset_start * 3600 * 24)
+        ---@type obsidian.PickerEntry
+        local weeklies = {}
+        for week_offset = 1, -2, -1 do
+          local week_dt = current_week_dt + (week_offset * 3600 * 24 * 7)
+          local week_alias = weekly_alias(week_dt)
+          local week_display = week_alias
+          local path = weekly_note_path(week_dt)
+          if week_offset == 0 then
+            week_display = week_display .. ' @current'
+          elseif week_offset == 1 then
+            week_display = week_display .. ' @next'
+          elseif week_offset == -1 then
+            week_display = week_display .. ' @last'
+          end
+          if not path:is_file() then
+            week_display = week_display .. ' ➡️ create'
+          end
+          weeklies[#weeklies + 1] = {
+            value = week_dt,
+            display = week_display,
+            ordinal = week_display,
+            filename = tostring(path),
+          }
+        end
 
-            local picker = client:picker()
-            if not picker then
-              client.log.err "No picker configured"
-              return
+        -- Define the template with explicit double line breaks between sections
+        local template = [[
+## Progress Review (25 minutes)
+- Assess completion status of each project milestone
+- Document specific achievements and blockers
+- Calculate time spent on each major category of work
+- Note any patterns in productivity or challenges
+
+
+## Next Week Planning (25 minutes)
+- Set 1-3 primary objectives for each project
+- Identify specific textbook sections/papers to study
+- Pre-schedule any flexible meetings or collaborations
+- Map deadlines and create buffer time for unforeseen issues
+
+
+## Reflection & Adjustment (10 minutes)
+- Review your productivity metrics
+- Adjust time allocations based on progress
+- Note any schedule modifications needed
+- Document lessons learned
+]]
+
+        -- This function will insert the template into the note
+        local function insert_weekly_template(note)
+          -- Only insert template if the note is new or doesn't already have the template
+          if note and note.content and not note.content:find '## Progress Review' then
+            -- If the note has content, add a newline separator
+            if #note.content > 0 and not note.content:match '\n$' then
+              note.content = note.content .. '\n\n'
             end
 
-            ---@param dt number
-            ---@return obsidian.Path
-            local function weekly_note_path(dt)
-              return client.dir / os.date("notes/weekly/week-of-%Y-%m-%d.md", dt)
-            end
+            note.content = note.content .. template
+            note:save()
+          end
 
-            ---@param dt number
-            ---@return string
-            local function weekly_alias(dt)
-              local alias = os.date("Week of %A %B %d, %Y", dt)
-              assert(type(alias) == "string")
-              return alias
-            end
+          return note
+        end
 
-            local day_of_week = os.date "%A"
-            assert(type(day_of_week) == "string")
-
-            ---@type integer
-            local offset_start
-            if day_of_week == "Sunday" then
-              offset_start = 1
-            elseif day_of_week == "Monday" then
-              offset_start = 0
-            elseif day_of_week == "Tuesday" then
-              offset_start = -1
-            elseif day_of_week == "Wednesday" then
-              offset_start = -2
-            elseif day_of_week == "Thursday" then
-              offset_start = -3
-            elseif day_of_week == "Friday" then
-              offset_start = -4
-            elseif day_of_week == "Saturday" then
-              offset_start = 2
-            end
-            assert(offset_start)
-
-            local current_week_dt = os.time() + (offset_start * 3600 * 24)
-            ---@type obsidian.PickerEntry
-            local weeklies = {}
-            for week_offset = 1, -2, -1 do
-              local week_dt = current_week_dt + (week_offset * 3600 * 24 * 7)
-              local week_alias = weekly_alias(week_dt)
-              local week_display = week_alias
-              local path = weekly_note_path(week_dt)
-
-              if week_offset == 0 then
-                week_display = week_display .. " @current"
-              elseif week_offset == 1 then
-                week_display = week_display .. " @next"
-              elseif week_offset == -1 then
-                week_display = week_display .. " @last"
-              end
-
-              if not path:is_file() then
-                week_display = week_display .. " ➡️ create"
-              end
-
-              weeklies[#weeklies + 1] = {
-                value = week_dt,
-                display = week_display,
-                ordinal = week_display,
-                filename = tostring(path),
+        picker:pick(weeklies, {
+          prompt_title = 'Weeklies',
+          callback = function(dt)
+            local path = weekly_note_path(dt)
+            ---@type obsidian.Note
+            local note
+            if path:is_file() then
+              note = Note.from_file(path)
+            else
+              note = client:create_note {
+                id = path.name,
+                dir = path:parent(),
+                title = weekly_alias(dt),
+                tags = { 'weekly-notes' },
               }
+              -- For new notes, insert the template right away
+              note = insert_weekly_template(note)
             end
 
-            picker:pick(weeklies, {
-              prompt_title = "Weeklies",
-              callback = function(dt)
-                local path = weekly_note_path(dt)
-                ---@type obsidian.Note
-                local note
-                if path:is_file() then
-                  note = Note.from_file(path)
-                else
-                  note = client:create_note {
-                    id = path.name,
-                    dir = path:parent(),
-                    title = weekly_alias(dt),
-                    tags = { "weekly-notes" },
-                  }
+            -- Open the note whether it's new or existing
+            client:open_note(note)
+
+            -- For existing notes, check if we need to add the template
+            -- This will run after opening the note
+            if path:is_file() then
+              vim.defer_fn(function()
+                -- Wait a bit for the buffer to load
+                local bufnr = vim.api.nvim_get_current_buf()
+                local content = table.concat(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false), '\n')
+
+                -- Check if template is already in the buffer
+                if not content:find '## Progress Review' then
+                  -- Split the template into lines, preserving empty lines
+                  local lines = {}
+                  for line in (template .. '\n'):gmatch '([^\n]*)\n' do
+                    table.insert(lines, line)
+                  end
+
+                  -- Add newlines if needed
+                  local last_line = vim.api.nvim_buf_line_count(bufnr)
+                  local last_line_content = vim.api.nvim_buf_get_lines(bufnr, last_line - 1, last_line, false)[1]
+                  if last_line_content and #last_line_content > 0 then
+                    vim.api.nvim_buf_set_lines(bufnr, last_line, last_line, false, { '', '' })
+                    last_line = last_line + 2
+                  end
+
+                  -- Insert template at end
+                  vim.api.nvim_buf_set_lines(bufnr, last_line, last_line, false, lines)
+
+                  -- Save the buffer
+                  vim.cmd 'w'
                 end
-                client:open_note(note)
-              end,
-            })
+              end, 100) -- 100ms delay to ensure buffer is loaded
+            end
           end,
-          desc = "Weeklies",
-        },
-        {
-          mode = { "v" },
-          -- { "<leader>o", group = "Obsidian" },
-          {
-            "<leader>oe",
-            function()
-              local title = vim.fn.input { prompt = "Enter title (optional): " }
-              vim.cmd("ObsidianExtractNote " .. title)
-            end,
-            desc = "Extract text into new note",
-          },
-          {
-            "<leader>ol",
-            function()
-              vim.cmd "ObsidianLink"
-            end,
-            desc = "Link text to an existing note",
-          },
-          {
-            "<leader>on",
-            function()
-              vim.cmd "ObsidianLinkNew"
-            end,
-            desc = "Link text to a new note",
-          },
-          {
-            "<leader>ot",
-            function()
-              vim.cmd "ObsidianTags"
-            end,
-            desc = "Tags",
-          },
-        },
-    { "<leader>q", group = "[q]uarto" },
-    { "<leader>qE", function() require('otter').export(true) end, desc = "[E]xport with overwrite" },
-    { "<leader>qa", ":QuartoActivate<cr>", desc = "[a]ctivate" },
-    { "<leader>qe", require('otter').export, desc = "[e]xport" },
-    { "<leader>qh", ":QuartoHelp ", desc = "[h]elp" },
-    { "<leader>qp", ":lua require'quarto'.quartoPreview()<cr>", desc = "[p]review" },
-    { "<leader>qq", ":lua require'quarto'.quartoClosePreview()<cr>", desc = "[q]uiet preview" },
-    { "<leader>qr", group = "[r]un" },
-    { "<leader>qra", ":QuartoSendAll<cr>", desc = "run [a]ll" },
-    { "<leader>qrb", ":QuartoSendBelow<cr>", desc = "run [b]elow" },
-    { "<leader>qrr", ":QuartoSendAbove<cr>", desc = "to cu[r]sor" },
-    { "<leader>r", group = "[r] R specific tools" },
-    { "<leader>rt", show_r_table, desc = "show [t]able" },
-    { "<leader>v", group = "[v]im" },
-    { "<leader>vc", ":Telescope colorscheme<cr>", desc = "[c]olortheme" },
-    { "<leader>vh", ':execute "h " . expand("<cword>")<cr>', desc = "vim [h]elp for current word" },
-    { "<leader>vl", ":Lazy<cr>", desc = "[l]azy package manager" },
-    { "<leader>vm", ":Mason<cr>", desc = "[m]ason software installer" },
-    { "<leader>vs", ":e $MYVIMRC | :cd %:p:h | split . | wincmd k<cr>", desc = "[s]ettings, edit vimrc" },
-    { "<leader>vt", toggle_light_dark_theme, desc = "[t]oggle light/dark theme" },
-    { "<leader>x", group = "e[x]ecute" },
-    { "<leader>xx", ":w<cr>:source %<cr>", desc = "[x] source %" },
-  }
-}, { mode = 'n'})
+        })
+      end,
+      desc = 'Weeklies with Template',
+    },
+    {
+      mode = { 'v' },
+      -- { "<leader>o", group = "Obsidian" },
+      {
+        '<leader>oe',
+        function()
+          local title = vim.fn.input { prompt = 'Enter title (optional): ' }
+          vim.cmd('ObsidianExtractNote ' .. title)
+        end,
+        desc = 'Extract text into new note',
+      },
+      {
+        '<leader>ol',
+        function()
+          vim.cmd 'ObsidianLink'
+        end,
+        desc = 'Link text to an existing note',
+      },
+      {
+        '<leader>on',
+        function()
+          vim.cmd 'ObsidianLinkNew'
+        end,
+        desc = 'Link text to a new note',
+      },
+      {
+        '<leader>ot',
+        function()
+          vim.cmd 'ObsidianTags'
+        end,
+        desc = 'Tags',
+      },
+    },
+    { '<leader>q', group = '[q]uarto + [q]uartz' },
+    {
+      '<leader>qq',
+      function()
+        local file = vim.fn.expand '%'
+        vim.cmd('!quarto render ' .. file)
+      end,
+      desc = 'render [Q]uarto File',
+    }, -- Added mnemonic and description
+    -- { "<leader>qq", function()  -- Changed to <leader>qp for preview to avoid conflict with <leader>qr
+    --   local file = vim.fn.expand("%")
+    --   vim.cmd("!quarto preview " .. file)
+    -- end, desc = "Preview [Q]uarto File" }, -- Added mnemonic and description
+    {
+      '<leader>qE',
+      function()
+        require('otter').export(true)
+      end,
+      desc = '[E]xport with overwrite',
+    },
+    { '<leader>qa', ':QuartoActivate<cr>', desc = '[a]ctivate' },
+    { '<leader>qe', require('otter').export, desc = '[e]xport' },
+    { '<leader>qh', ':QuartoHelp ', desc = '[h]elp' },
+    -- { "<leader>qp", ":lua require'quarto'.quartoPreview()<cr>", desc = "[p]review" },
+    { '<leader>qc', ":lua require'quarto'.quartoClosePreview()<cr>", desc = '[q]uiet preview' },
+    { '<leader>qr', group = '[r]un' },
+    { '<leader>qra', ':QuartoSendAll<cr>', desc = 'run [a]ll' },
+    { '<leader>qrb', ':QuartoSendBelow<cr>', desc = 'run [b]elow' },
+    { '<leader>qrr', ':QuartoSendAbove<cr>', desc = 'to cu[r]sor' },
+    { '<leader>r', group = '[r] R specific tools' },
+    -- { "<leader>rt", show_r_table, desc = "show [t]able" },
+    { '<leader>v', group = '[v]im' },
+    { '<leader>vc', ':Telescope colorscheme<cr>', desc = '[c]olortheme' },
+    { '<leader>vh', ':execute "h " . expand("<cword>")<cr>', desc = 'vim [h]elp for current word' },
+    { '<leader>vl', ':Lazy<cr>', desc = '[l]azy package manager' },
+    { '<leader>vm', ':Mason<cr>', desc = '[m]ason software installer' },
+    { '<leader>vs', ':e $MYVIMRC | :cd %:p:h | split . | wincmd k<cr>', desc = '[s]ettings, edit vimrc' },
+    { '<leader>vt', toggle_light_dark_theme, desc = '[t]oggle light/dark theme' },
+    { '<leader>x', group = 'e[x]ecute' },
+    -- { "<leader>xx", ":w<cr>:source %<cr>", desc = "[x] source %" },
+  },
+}, { mode = 'n' })
 
 vim.api.nvim_set_keymap('i', '<C-l>', '<c-g>u<Esc>[s1z=`]a<c-g>u', { noremap = true, silent = true })
 -- unbind ctrl-k in normal mode
@@ -542,92 +671,32 @@ vim.api.nvim_set_keymap('i', '<C-k>', '<nop>', { noremap = true, silent = true }
 
 vim.api.nvim_set_keymap('n', 'zz', ':Alpha<CR>', { noremap = true, silent = true })
 --
-local smart_dirs = require('misc.telescope_repos')
+local smart_dirs = require 'misc.telescope_repos'
 
 -- Create a command to call it
 vim.api.nvim_create_user_command('S', function()
-    smart_dirs.smart_cd()
+  smart_dirs.smart_cd()
 end, {})
 wk.add({
-  { "<leader>fs", function() smart_dirs.smart_cd() end, desc = "[S]mart directory navigation" },
+  {
+    '<leader>fs',
+    function()
+      smart_dirs.smart_cd()
+    end,
+    desc = '[S]mart directory navigation',
+  },
 }, { mode = 'n', silent = true })
 
--- Load the ToggleTerm module
-local Terminal = require("toggleterm.terminal").Terminal
-
--- Factory function to create quartz terminals
-local function create_quartz_terminal(name, command)
-  return Terminal:new({
-    cmd = command,
-    hidden = true,
-    direction = "horizontal",
-    size = 10,
-    state = {
-      browser_opened = false,
-      is_running = false
-    },
-    on_open = function(term)
-      vim.cmd("startinsert!")
-      term.state.browser_opened = false
-      term.state.is_running = true
-    end,
-    on_close = function(term)
-      term.state.is_running = false
-    end,
-    on_stdout = function(term, job, data, name)
-      if term.state.browser_opened then return end
-      
-      for _, line in ipairs(data) do
-        if line:match("localhost:8080") then
-          vim.fn.jobstart({"open", "http://localhost:8080"})
-          term.state.browser_opened = true
-          break
-        end
-      end
-    end,
-    on_stderr = function(term, job, data, name)
-      for _, line in ipairs(data) do
-        if line:match("error") then
-          vim.notify(name .. " error: " .. line, vim.log.levels.ERROR)
-        end
-      end
-    end,
-  })
-end
-
--- Create two terminal instances with different configurations
-local quartz_preview = create_quartz_terminal("Quartz Preview",
-  "cd /Users/user/repos/quartz && export QUARTZ_MODE=preview && npx quartz build --serve --verbose --bundleInfo"
-)
-
-local quartz_build = create_quartz_terminal("Quartz Build",
-  "cd /Users/user/repos/quartz && npx quartz build --serve --verbose --bundleInfo"
-)
-
--- Toggle functions for both variants
-local function toggle_quartz_preview()
-  if not quartz_preview.state.is_running then
-    quartz_preview:start()
-  else
-    quartz_preview:toggle()
-  end
-end
-
-local function toggle_quartz_build()
-  if not quartz_build.state.is_running then
-    quartz_build:start()
-  else
-    quartz_build:toggle()
-  end
-end
-
--- Create separate user commands
-vim.api.nvim_create_user_command("QuartzPreview", toggle_quartz_preview, {})
-vim.api.nvim_create_user_command("QuartzBuild", toggle_quartz_build, {})
-
--- Keybindings
 wk.add({
-  {"<leader>qp", toggle_quartz_preview, desc = "Quartz [P]review" },
-  {"<leader>qb",  toggle_quartz_build, desc = "Quartz preview [B]uild" },
+  {
+    '<leader>an',
+    function()
+      local file = vim.fn.expand '%:p' -- Get the absolute path of the current file
+      local cmd = string.format('/Users/user/repos/scripts/apy-update.py -u %s', vim.fn.shellescape(file))
+      vim.cmd('!' .. cmd)
+    end,
+    desc = 'Run apy-update.py on current file',
+  },
 }, { mode = 'n', silent = true })
 
+require 'config.quartz_terminals'

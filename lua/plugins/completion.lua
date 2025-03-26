@@ -16,7 +16,7 @@ return {
         "tex",
         "plaintex",
         "norg",
-        "quarto"
+        "quarto",
     },
     config = function()
         require("autolist").setup()
@@ -69,14 +69,16 @@ return {
       -- 'hrsh7th/cmp-calc',
       -- 'hrsh7th/cmp-emoji',
       'saadparwaiz1/cmp_luasnip',
+      'jalvesaq/cmp-zotcite',
       -- 'f3fora/cmp-spell',
       'ray-x/cmp-treesitter',
-      'kdheepak/cmp-latex-symbols',
+      -- 'kdheepak/cmp-latex-symbols',
       'jmbuhr/cmp-pandoc-references',
       'L3MON4D3/LuaSnip',
-      'rafamadriz/friendly-snippets',
+      'rafamadriz/friendly-snippets', -- n / note
       'onsails/lspkind-nvim',
-      'jmbuhr/otter.nvim',
+      "R-nvim/cmp-r",
+      -- 'jmbuhr/otter.nvim',
     },
     config = function()
       local cmp = require 'cmp'
@@ -84,10 +86,10 @@ return {
       local lspkind = require 'lspkind'
       local ls = require("luasnip")
 
-      local has_words_before = function()
-        local line, col = unpack(vim.api.nvim_win_get_cursor(0))
-        return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match '%s' == nil
-      end
+      -- local has_words_before = function()
+      --   local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+      --   return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match '%s' == nil
+      -- end
 
       cmp.setup {
         snippet = {
@@ -144,6 +146,7 @@ return {
               treesitter = '[TS]',
               calc = '[calc]',
               latex_symbols = '[tex]',
+              cmp_r = '[R]',
               emoji = '[emoji]',
             },
           },
@@ -157,9 +160,11 @@ return {
           { name = 'pandoc_references' },
           { name = 'buffer', keyword_length = 5, max_item_count = 3 },
           { name = 'spell' },
-          { name = 'treesitter', keyword_length = 5, max_item_count = 3 },
+          { name = 'treesitter', max_item_count = 3 },  -- keyword_length = 3,
+          { name = "cmp_zotcite" },
           { name = 'calc' },
           { name = 'latex_symbols' },
+          { name = "cmp_r" },
           { name = 'emoji' },
         },
         view = {
@@ -171,14 +176,18 @@ return {
           },
         },
       }
+      require("cmp_r").setup({})
 ls.config.setup({
     enable_autosnippets = true,
 })
       -- for friendly snippets
-      require('luasnip.loaders.from_vscode').lazy_load()
+      -- require('luasnip.loaders.from_vscode').lazy_load()
+      require("luasnip.loaders.from_vscode").load {
+      exclude = { "markdown.Insert Note" },
+  }
       -- for custom snippets
       -- require('luasnip.loaders.from_vscode').lazy_load { paths = { vim.fn.stdpath 'config' .. '/snips' } }
-require("luasnip.loaders.from_lua").load({paths = "~/.config/quarto-nvim-kickstarter/LuaSnip/"})
+      require("luasnip.loaders.from_lua").load({paths = "~/.config/nvim/LuaSnip/"})
 -- print("Loaded snippets from: " .. vim.fn.expand("~/.config/quarto-nvim-kickstarter/LuaSnip/"))
 -- vim.api.nvim_command("messages")  -- This will show the print in Neovim
 

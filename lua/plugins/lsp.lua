@@ -4,7 +4,7 @@ return {
 
     -- for lsp features in code cells / embedded code
     'jmbuhr/otter.nvim',
-    -- enable = false,
+    enable = false,
     dev = false,
     dependencies = {
       {
@@ -26,12 +26,6 @@ return {
       { 'williamboman/mason.nvim' },
       { 'williamboman/mason-lspconfig.nvim' },
       { 'WhoIsSethDaniel/mason-tool-installer.nvim' },
-      { -- nice loading notifications
-        -- PERF: but can slow down startup
-        'j-hui/fidget.nvim',
-        enabled = false,
-        opts = {},
-      },
       {
         {
           'folke/lazydev.nvim',
@@ -127,23 +121,23 @@ return {
       -- $home/.config/marksman/config.toml :
       -- [core]
       -- markdown.file_extensions = ["md", "markdown", "qmd"]
-      lspconfig.marksman.setup {
-        capabilities = capabilities,
-        filetypes = { 'markdown', 'quarto' },
-        root_dir = util.root_pattern('.git', '.marksman.toml', '_quarto.yml'),
-      }
+      -- lspconfig.marksman.setup {
+      --   capabilities = capabilities,
+      --   filetypes = { 'markdown', 'quarto' },
+      --   root_dir = util.root_pattern('.git', '.marksman.toml', '_quarto.yml'),
+      -- }
 
-      lspconfig.r_language_server.setup {
-        capabilities = capabilities,
-        flags = lsp_flags,
-        settings = {
-          r = {
-            lsp = {
-              rich_documentation = false,
-            },
-          },
-        },
-      }
+      -- lspconfig.r_language_server.setup {
+      --   capabilities = capabilities,
+      --   flags = lsp_flags,
+      --   settings = {
+      --     r = {
+      --       lsp = {
+      --         rich_documentation = false,
+      --       },
+      --     },
+      --   },
+      -- }
 
       lspconfig.cssls.setup {
         capabilities = capabilities,
