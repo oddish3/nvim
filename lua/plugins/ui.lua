@@ -3,6 +3,7 @@ return {
   -- a nice seletion UI also to find and open files
   {
     'nvim-telescope/telescope.nvim',
+    lazy = true,
     dependencies = {
       { 'nvim-telescope/telescope-ui-select.nvim' },
       { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
@@ -12,6 +13,7 @@ return {
         dependencies = {
           { 'kkharji/sqlite.lua' },
         },
+        cmd = "Telescope zotero",
         config = function()
           -- Create a module-level variable to track the current mode
           local use_locate_function = false
@@ -269,15 +271,15 @@ return {
     },
   },
 
-  { -- highlight occurences of current word
-    'RRethy/vim-illuminate',
-    enabled = false,
-  },
+  -- { -- highlight occurences of current word
+  --   'RRethy/vim-illuminate',
+  --   enabled = false,
+  -- },
 
-  {
-    'NStefan002/screenkey.nvim',
-    lazy = false,
-  },
+  -- {
+  --   'NStefan002/screenkey.nvim',
+  --   lazy = false,
+  -- },
 
   { -- filetree
     'nvim-tree/nvim-tree.lua',
@@ -322,7 +324,7 @@ return {
   -- show keybinding help window
   {
     'folke/which-key.nvim',
-    -- enabled = false,
+    event = "VeryLazy",
     config = function()
       require('which-key').setup {}
       require 'config.keymap'
@@ -394,6 +396,7 @@ return {
 
   { -- show indent lines
     'lukas-reineke/indent-blankline.nvim',
+    event = "BufReadPost",
     -- enabled = false,
     main = 'ibl',
     opts = {

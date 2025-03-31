@@ -38,7 +38,7 @@ return {
       require("zotcite").setup({
         python_path = "python3",
         pdf_extractor = "pdfnotes2.py",
-        obsidian_vault_path = "/Users/user/repos/quartz/content/references",
+        obsidian_vault_path = "/Users/user/repos/quartz/content/03-references/papers",
         insert_obsidian_link = true
       })
   end,
@@ -54,6 +54,7 @@ return {
   {
     -- "epwalsh/obsidian.nvim",
     dir = "/Users/user/repos/public/obsidian.nvim",
+    event = "InsertEnter",
     -- enabled = false, 
     version = "*", -- recommended, use latest release instead of latest commit
     lazy = true,
@@ -87,7 +88,7 @@ return {
       },
       -- see below for full list of options 👇
       daily_notes = {
-        folder = "daily/",
+        folder = "06-temporal/daily/",
       },
       completion = {
         -- Set to false to disable completion.
@@ -95,9 +96,9 @@ return {
         -- Trigger completion at 2 chars.
         min_chars = 2,
       },
-      templates = {
-        folder = "/Users/user/vault/templates",
-      },
+      -- templates = {
+      --   folder = "/Users/user/vault/templates",
+      -- },
       ui = {
     enable = false,
       },

@@ -21,11 +21,11 @@ return {
 
   {
     'neovim/nvim-lspconfig',
-    -- event = "LspAttach",
+    event = "VeryLazy",
         -- enable = false,
     dependencies = {
-      { 'williamboman/mason.nvim' },
-      { 'williamboman/mason-lspconfig.nvim' },
+      { 'williamboman/mason.nvim', cmd = "Mason" },
+      { 'williamboman/mason-lspconfig.nvim', cmd = "Mason" },
       { 'WhoIsSethDaniel/mason-tool-installer.nvim' },
       {
         {
@@ -70,6 +70,8 @@ return {
           'isort',
           'tree-sitter-cli',
           'jupytext',
+          'air',
+          'prettier',
         },
       }
 
