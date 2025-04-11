@@ -72,21 +72,22 @@ function process_text(text)
   return result
 end
 
-
 -- This function processes the current buffer's block of text and creates notes
 function M.create_notes()
   local bufnr = vim.api.nvim_get_current_buf()
   local all_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
   local total_lines = #all_lines
-  if total_lines == 0 then return end
+  if total_lines == 0 then
+    return
+  end
 
   -- Determine the block boundaries based on the current line.
-  local current_line = vim.fn.line('.')  -- 1-indexed
+  local current_line = vim.fn.line '.' -- 1-indexed
   local start_idx, end_idx = current_line, current_line
 
   -- Go upward until an empty line or beginning of file
   for i = current_line, 1, -1 do
-    if all_lines[i]:match("^%s*$") then
+    if all_lines[i]:match '^%s*$' then
       start_idx = i + 1
       break
     elseif i == 1 then
@@ -96,7 +97,7 @@ function M.create_notes()
 
   -- Go downward until an empty line or end of file
   for i = current_line, total_lines do
-    if all_lines[i]:match("^%s*$") then
+    if all_lines[i]:match '^%s*$' then
       end_idx = i - 1
       break
     elseif i == total_lines then
@@ -110,23 +111,25 @@ function M.create_notes()
     table.insert(block_lines, all_lines[i])
   end
 
-  if #block_lines == 0 then return end
+  if #block_lines == 0 then
+    return
+  end
 
   -- Parse the first line for model/deck/tags info.
   -- Format should be: model/deck/tags
   local category_line = table.remove(block_lines, 1)
-  local model, deck, tags = "Basic", "Default", ""
+  local model, deck, tags = 'Basic', 'Default', ''
   local parts = {}
-  for part in string.gmatch(category_line, "[^/]+") do
+  for part in string.gmatch(category_line, '[^/]+') do
     table.insert(parts, vim.trim(part))
   end
-  if #parts >= 1 and parts[1] ~= "" then
+  if #parts >= 1 and parts[1] ~= '' then
     model = parts[1]
   end
-  if #parts >= 2 and parts[2] ~= "" then
+  if #parts >= 2 and parts[2] ~= '' then
     deck = parts[2]
   end
-  if #parts >= 3 and parts[3] ~= "" then
+  if #parts >= 3 and parts[3] ~= '' then
     tags = parts[3]
   end
 
@@ -136,33 +139,33 @@ function M.create_notes()
   local current_note = { q = {}, a = {}, tags = tags }
   local mode = nil -- "q" for question, "a" for answer
   for _, line in ipairs(block_lines) do
-    if vim.startswith(line, "tags:") then
-      local new_tags = line:match("^tags:%s*(.*)")
-      if new_tags and new_tags ~= "" then
+    if vim.startswith(line, 'tags:') then
+      local new_tags = line:match '^tags:%s*(.*)'
+      if new_tags and new_tags ~= '' then
         current_note.tags = new_tags
       end
-    elseif vim.startswith(line, "Q:") then
+    elseif vim.startswith(line, 'Q:') then
       -- If there is an existing note, store it and start a new one.
-      if (#current_note.q > 0 or #current_note.a > 0) then
+      if #current_note.q > 0 or #current_note.a > 0 then
         table.insert(notes, current_note)
         current_note = { q = {}, a = {}, tags = tags }
       end
-      mode = "q"
+      mode = 'q'
       local qline = line:sub(4) -- drop "Q:" and following space
       table.insert(current_note.q, vim.trim(qline))
-    elseif vim.startswith(line, "A:") then
-      mode = "a"
+    elseif vim.startswith(line, 'A:') then
+      mode = 'a'
       local aline = line:sub(4) -- drop "A:" and following space
       table.insert(current_note.a, vim.trim(aline))
     else
-      if mode == "q" then
+      if mode == 'q' then
         table.insert(current_note.q, line)
-      elseif mode == "a" then
+      elseif mode == 'a' then
         table.insert(current_note.a, line)
       end
     end
   end
-  if (#current_note.q > 0 or #current_note.a > 0) then
+  if #current_note.q > 0 or #current_note.a > 0 then
     table.insert(notes, current_note)
   end
 
@@ -180,12 +183,12 @@ markdown: true
 ## Back
 %s
 ]]
-    local new_notes = {}
+  local new_notes = {}
 
   for _, note in ipairs(notes) do
     -- Process question and answer with process_text
-    local question = process_text(table.concat(note.q, "\n"))
-    local answer = process_text(table.concat(note.a, "\n"))
+    local question = process_text(table.concat(note.q, '\n'))
+    local answer = process_text(table.concat(note.a, '\n'))
     local note_str = string.format(template, model, deck, note.tags, question, answer)
     table.insert(new_notes, note_str)
   end
@@ -193,7 +196,9 @@ markdown: true
   -- Helper function to split note_str into lines while preserving empty lines
   local function split_lines(str)
     local lines = {}
-    if #str == 0 then return lines end
+    if #str == 0 then
+      return lines
+    end
     local pos = 1
     while pos <= #str do
       local nl_pos = str:find('\n', pos)
@@ -212,14 +217,14 @@ markdown: true
   for _, note_str in ipairs(new_notes) do
     local lines = split_lines(note_str)
     vim.list_extend(new_block, lines)
-    table.insert(new_block, "")  -- Add blank line between notes
+    table.insert(new_block, '') -- Add blank line between notes
   end
 
   -- Replace the original block in the buffer with the new block
   vim.api.nvim_buf_set_lines(bufnr, start_idx - 1, end_idx, false, new_block)
   -- Optionally, move the cursor back to the start of the block
-  vim.api.nvim_win_set_cursor(0, {start_idx, 0})
-  vim.cmd("update")
+  vim.api.nvim_win_set_cursor(0, { start_idx, 0 })
+  vim.cmd 'update'
 end
 
 -- Function to copy clipboard image to Anki media and insert markdown link

@@ -1,6 +1,8 @@
 -- global options
 
 local animals = require('misc.style').animals
+DefaultConcealLevel = 0
+FullConcealLevel = 3
 
 -- proper colors
 vim.opt.termguicolors = true
@@ -75,8 +77,19 @@ let g:currentmode={
 ]]
 
 math.randomseed(os.time())
-local i = math.random(#animals)
-vim.opt.statusline = '%{%g:currentmode[mode()]%} %{%reg_recording()%} %* %t | %y | %* %= c:%c l:%l/%L %p%% %#NonText# ' .. animals[i] .. ' %*'
+local i = math.random(1, #animals)
+-- vim.opt.statusline = '%{%g:currentmode[mode()]%} %{%reg_recording()%} %* %t | %y | %* %= c:%c l:%l/%L %p%% %#NonText# ' .. animals[i] .. ' %*'
+vim.opt.statusline = '%{%g:currentmode[mode()]%} %{%reg_recording()%} %* %t | %y | %* '
+  .. '%= c:%c l:%l/%L %p%% %#NonText# %*'
+  .. ' '
+  .. '%{%v:lua.require("utils.wordcount").get_word_count_info()%} '
+  .. animals[i]
+
+-- vim.opt.statusline = '%{%g:currentmode[mode()]%} %{%reg_recording()%} %* %t | %y | %* | '
+--   .. ' c:%c l:%l/%L %p%% %#NonText# '
+--   .. animals[i]
+--   .. ' '
+--   .. '%=%{%v:lua.require("utils.wordcount").get_word_count_info()%} %*'
 
 -- hide cmdline when not used
 vim.opt.cmdheight = 1
@@ -101,7 +114,7 @@ vim.opt.formatoptions:remove 'o'
 vim.opt.scrolloff = 5
 
 -- (don't == 0) replace certain elements with prettier ones
--- vim.opt.conceallevel = 0
+vim.opt.conceallevel = DefaultConcealLevel
 -- vim.opt_local.conceallevel = 2
 
 -- diagnostics
@@ -118,7 +131,7 @@ vim.filetype.add {
   },
   pattern = {
     ['.*%.qmd'] = 'quarto', -- Keep quarto filetype for qmd files
-  }
+  },
 }
 
 -- additional builtin vim packages

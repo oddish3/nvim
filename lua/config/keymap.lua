@@ -253,58 +253,19 @@ wk.add({
   },
 }, { mode = 'i' })
 
--- local function new_terminal(lang)
---   vim.cmd('vsplit term://' .. lang)
--- end
---
--- local function new_terminal_python()
---   new_terminal 'python'
--- end
---
--- local function new_terminal_r()
---   new_terminal 'R --no-save'
--- end
---
--- local function new_terminal_ipython()
---   new_terminal 'ipython --no-confirm-exit'
--- end
---
--- local function new_terminal_julia()
---   new_terminal 'julia'
--- end
---
--- local function new_terminal_shell()
---   new_terminal '$SHELL'
--- end
---
--- local function get_otter_symbols_lang()
---   local otterkeeper = require 'otter.keeper'
---   local main_nr = vim.api.nvim_get_current_buf()
---   local langs = {}
---   for i, l in ipairs(otterkeeper.rafts[main_nr].languages) do
---     langs[i] = i .. ': ' .. l
---   end
---   -- promt to choose one of langs
---   local i = vim.fn.inputlist(langs)
---   local lang = otterkeeper.rafts[main_nr].languages[i]
---   local params = {
---     textDocument = vim.lsp.util.make_text_document_params(),
---     otter = {
---       lang = lang,
---     },
---   }
---   -- don't pass a handler, as we want otter to use it's own handlers
---   vim.lsp.buf_request(main_nr, ms.textDocument_documentSymbol, params, nil)
--- end
-
--- vim.keymap.set("n", "<leader>os", get_otter_symbols_lang, {desc = "otter [s]ymbols"})
-
--- local anki = require('utils.anki')
--- In your keymaps file
+local function toggle_conceal()
+  local lvl = vim.o.conceallevel
+  if lvl > DefaultConcealLevel then
+    vim.o.conceallevel = DefaultConcealLevel
+  else
+    vim.o.conceallevel = FullConcealLevel
+  end
+end
 
 -- normal mode with <leader>
 wk.add({
   {
+    { '<leader>t', group = '[T]ask' },
     { '<leader>p', group = '[P]andoc' },
     { '<leader>pw', "<cmd>TermExec cmd='pandoc %:p -o %:p:r.docx'<CR>", desc = '[w]ord' },
     { '<leader>pm', "<cmd>TermExec cmd='pandoc %:p -o %:p:r.md'<CR>", desc = '[m]arkdown' },
@@ -320,16 +281,16 @@ wk.add({
     --   "<cmd>TermExec cmd='source /Users/user/venv/bin/activate.fish && pandoc /Users/user/repos/quartz/content/projects/EYEGEN/notes/clinical-care-overview.md -s -o /Users/user/repos/quartz/content/projects/EYEGEN/notes/clinical-care-overview.docx --citeproc --bibliography=/Users/user/repos/quartz/content/projects/EYEGEN/notes/references.bib'<CR>",
     --   desc = 'convert with .[b]ib file',
     -- },
-  {
-  '<leader>pb',
-  function()
-    local file = vim.fn.expand('%:p')
-    local output = vim.fn.expand('%:p:r') .. '.docx'
-    local bibfile = vim.fn.fnamemodify(file, ':h') .. '/references.bib'
-    vim.cmd("TermExec cmd='pandoc " .. file .. " -s -o " .. output .. " --citeproc --bibliography=" .. bibfile .. "'")
-  end,
-  desc = 'convert with .[b]ib file',
-},
+    {
+      '<leader>pb',
+      function()
+        local file = vim.fn.expand '%:p'
+        local output = vim.fn.expand '%:p:r' .. '.docx'
+        local bibfile = vim.fn.fnamemodify(file, ':h') .. '/references.bib'
+        vim.cmd("TermExec cmd='pandoc " .. file .. ' -s -o ' .. output .. ' --citeproc --bibliography=' .. bibfile .. "'")
+      end,
+      desc = 'convert with .[b]ib file',
+    },
     {
       '<leader>pz',
       "<cmd>TermExec cmd='source /Users/user/venv/bin/activate.fish && "
@@ -363,6 +324,9 @@ wk.add({
     -- { "<leader>cr", new_terminal_r, desc = "new [R] terminal" },
     -- { "<leader>d", group = "[d]ebug" },
     -- { "<leader>dt", group = "[t]est" },
+    { '<leader>b', group = 'garden' },
+    { '<leader>bp', "<cmd>TermExec cmd='python3 /Users/user/repos/scripts/garden-pruning.py > prune-report.md'<CR>", desc = 'digital garden prune' },
+    -- { '<leader>bc', ":lua require'oil.actions'.refresh.callback()<cr>", desc = 'refresh oil' },
     { '<leader>e', group = '[e]dit' },
     { '<leader>f', group = '[f]ind (telescope)' },
     { '<leader>f<space>', '<cmd>Telescope buffers<cr>', desc = '[ ] buffers' },
@@ -375,7 +339,7 @@ wk.add({
     { '<leader>fh', '<cmd>Telescope help_tags<cr>', desc = '[h]elp' },
     { '<leader>fj', '<cmd>Telescope jumplist<cr>', desc = '[j]umplist' },
     { '<leader>fk', '<cmd>Telescope keymaps<cr>', desc = '[k]eymaps' },
-    { '<leader>fl', '<cmd>Telescope loclist<cr>', desc = '[l]oclist' },
+    { '<leader>fl', '<cmd>Telescope luasnip<cr>', desc = '[l]uasnip' },
     { '<leader>fm', '<cmd>Telescope marks<cr>', desc = '[m]arks' },
     { '<leader>fq', '<cmd>Telescope quickfix<cr>', desc = '[q]uickfix' },
     { '<leader>g', group = '[g]it' },
@@ -392,8 +356,7 @@ wk.add({
     { '<leader>gws', ":lua require('telescope').extensions.git_worktree.git_worktrees()<cr>", desc = 'worktree switch' },
     { '<leader>h', group = '[h]elp / [h]ide / debug' },
     { '<leader>hc', group = '[c]onceal' },
-    { '<leader>hch', ':set conceallevel=1<cr>', desc = '[h]ide/conceal' },
-    { '<leader>hcs', ':set conceallevel=0<cr>', desc = '[s]how/unconceal' },
+    { '<leader>hc', toggle_conceal, desc = '[c]onceal toggle' },
     { '<leader>ht', group = '[t]reesitter' },
     { '<leader>htt', vim.treesitter.inspect_tree, desc = 'show [t]ree' },
     { '<leader>i', group = '[i]mage' },
@@ -699,17 +662,28 @@ wk.add({
   },
 }, { mode = 'n', silent = true })
 
-wk.add({
-  {
-    '<leader>an',
-    function()
-      local file = vim.fn.expand '%:p' -- Get the absolute path of the current file
-      local cmd = string.format('/Users/user/repos/scripts/apy-update.py -u %s', vim.fn.shellescape(file))
-      vim.cmd('!' .. cmd)
-    end,
-    desc = 'Run apy-update.py on current file',
-  },
-}, { mode = 'n', silent = true })
+-- wk.add({
+--   {
+--     '<leader>an',
+--     function()
+--       local file = vim.fn.expand '%:p' -- Get the absolute path of the current file
+--       local cmd = string.format('/Users/user/repos/scripts/apy-update.py -u %s', vim.fn.shellescape(file))
+--       vim.cmd('!' .. cmd)
+--     end,
+--     desc = 'Run apy-update.py on current file',
+--   },
+-- }, { mode = 'n', silent = true })
+
+-- wk.add({
+--   { '<leader>us', { [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]], desc = 'Replace word under cursor globally' } },
+--   { '<leader>uc', { [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gci<Left><Left><Left>]], desc = 'Replace word under cursor with confirmation' } },
+--   { '<leader>uf', { [[:/\\<<C-r><C-w>\\><CR>]], desc = 'Search word under cursor' } },
+-- }, { mode = 'n', silent = true })
+
+-- Search and replace the word under cursor globally
+vim.keymap.set('n', '<leader>us', [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]], { silent = true })
+-- Search and replace the word under cursor with confirmation
+vim.keymap.set('n', '<leader>ur', [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gci<Left><Left><Left>]], { silent = true })
 
 require 'config.quartz_terminals'
 
@@ -751,3 +725,52 @@ vim.api.nvim_set_keymap('s', '<C-n>', '<Plug>luasnip-next-choice', {})
 vim.api.nvim_set_keymap('i', '<C-p>', '<Plug>luasnip-prev-choice', {})
 vim.api.nvim_set_keymap('s', '<C-p>', '<Plug>luasnip-prev-choice', {})
 
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'oil',
+  callback = function(event)
+    vim.keymap.set('n', 'C-r', function()
+      require('oil.actions').refresh.callback()
+    end, { desc = 'refresh oil', buffer = event.buf })
+  end,
+})
+
+-- Iterate through incomplete tasks in telescope
+-- You can confirm in your teminal lamw25wmal with:
+-- rg "^\s*-\s\[ \]" test-markdown.md
+vim.keymap.set('n', '<leader>tt', function()
+  require('telescope.builtin').grep_string(require('telescope.themes').get_ivy {
+    prompt_title = 'Incomplete Tasks',
+    -- search = "- \\[ \\]", -- Fixed search term for tasks
+    -- search = "^- \\[ \\]", -- Ensure "- [ ]" is at the beginning of the line
+    search = '^\\s*- \\[ \\]', -- also match blank spaces at the beginning
+    search_dirs = { vim.fn.getcwd() }, -- Restrict search to the current working directory
+    use_regex = true, -- Enable regex for the search term
+    initial_mode = 'normal', -- Start in normal mode
+    layout_config = {
+      preview_width = 0.5, -- Adjust preview width
+    },
+    additional_args = function()
+      return { '--no-ignore' } -- Include files ignored by .gitignore
+    end,
+  })
+end, { desc = '[P]Search for incomplete tasks' })
+
+-- Iterate throuth completed tasks in telescope lamw25wmal
+vim.keymap.set('n', '<leader>tc', function()
+  require('telescope.builtin').grep_string(require('telescope.themes').get_ivy {
+    prompt_title = 'Completed Tasks',
+    -- search = [[- \[x\] `done:]], -- Regex to match the text "`- [x] `done:"
+    -- search = "^- \\[x\\] `done:", -- Matches lines starting with "- [x] `done:"
+    search = '^\\s*- \\[x\\] `done:', -- also match blank spaces at the beginning
+    search = '^\\s*- \\[x\\] ',
+    search_dirs = { vim.fn.getcwd() }, -- Restrict search to the current working directory
+    use_regex = true, -- Enable regex for the search term
+    initial_mode = 'normal', -- Start in normal mode
+    layout_config = {
+      preview_width = 0.5, -- Adjust preview width
+    },
+    additional_args = function()
+      return { '--no-ignore' } -- Include files ignored by .gitignore
+    end,
+  })
+end, { desc = '[P]Search for completed tasks' })

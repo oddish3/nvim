@@ -27,56 +27,94 @@ if vim.fn.has 'nvim-0.10.0' == 0 then
   return
 end
 
--- highlight code cells similar to
--- 'lukas-reineke/headlines.nvim'
--- (disabled in lua/plugins/ui.lua)
-local buf = api.nvim_get_current_buf()
-
-local parsername = 'markdown'
-local parser = ts.get_parser(buf, 'markdown')
-local tsquery = '(fenced_code_block)@codecell'
-
--- vim.api.nvim_set_hl(0, '@markup.codecell', { bg = '#000055' })
-vim.api.nvim_set_hl(0, '@markup.codecell', {
-  link = 'CursorLine',
-})
-
-local function clear_all()
-  local all = api.nvim_buf_get_extmarks(buf, ns, 0, -1, {})
-  for _, mark in ipairs(all) do
-    vim.api.nvim_buf_del_extmark(buf, ns, mark[1])
+-- highlight code cells similar to 'lukas-reineke/headlines.nvim'
+local function setup_code_cell_highlighting(buf)
+  buf = buf or api.nvim_get_current_buf()
+  local parsername = 'markdown'
+  local parser = ts.get_parser(buf, parsername)
+  local tsquery = '(fenced_code_block)@codecell'
+  
+  -- Set the highlight style
+  vim.api.nvim_set_hl(0, '@markup.codecell', {
+    link = 'CursorLine',
+  })
+  
+  -- Clear all existing extmarks
+  local function clear_all()
+    local all = api.nvim_buf_get_extmarks(buf, ns, 0, -1, {})
+    for _, mark in ipairs(all) do
+      vim.api.nvim_buf_del_extmark(buf, ns, mark[1])
+    end
   end
-end
-
-local function highlight_range(from, to)
-  for i = from, to do
-    vim.api.nvim_buf_set_extmark(buf, ns, i, 0, {
-      hl_eol = true,
-      line_hl_group = '@markup.codecell',
-    })
+  
+  -- Apply highlighting to a range of lines
+  local function highlight_range(from, to)
+    for i = from, to do
+      vim.api.nvim_buf_set_extmark(buf, ns, i, 0, {
+        hl_eol = true,
+        line_hl_group = '@markup.codecell',
+      })
+    end
   end
-end
-
-local function highlight_cells()
-  clear_all()
-
-  local query = ts.query.parse(parsername, tsquery)
-  local tree = parser:parse()
-  local root = tree[1]:root()
-  for _, match, _ in query:iter_matches(root, buf, 0, -1, { all = true }) do
-    for _, nodes in pairs(match) do
-      for _, node in ipairs(nodes) do
-        local start_line, _, end_line, _ = node:range()
-        pcall(highlight_range, start_line, end_line - 1)
+  
+  -- Main highlighting function
+  local function highlight_cells()
+    clear_all()
+    -- Make sure parser is up to date
+    parser:parse()
+    
+    local query = ts.query.parse(parsername, tsquery)
+    local tree = parser:parse()
+    local root = tree[1]:root()
+    
+    for _, match, _ in query:iter_matches(root, buf, 0, -1, { all = true }) do
+      for id, nodes in pairs(match) do
+        for _, node in ipairs(nodes) do
+          local start_line, _, end_line, _ = node:range()
+          pcall(highlight_range, start_line, end_line - 1)
+        end
       end
     end
   end
+  
+  -- Initial highlighting
+  highlight_cells()
+  
+  -- Create a dedicated augroup for this buffer
+  local group_name = 'QuartoCellHighlight_' .. buf
+  local augroup = vim.api.nvim_create_augroup(group_name, { clear = true })
+  
+  -- Set up a more comprehensive set of autocommands to catch all changes
+  vim.api.nvim_create_autocmd({
+    'TextChanged',       -- Catches normal mode edits
+    'TextChangedI',      -- Catches insert mode edits
+    'TextChangedP',      -- Catches popup menu selections
+    'BufWritePre',       -- Before saving
+    'BufWritePost',      -- After saving
+    'InsertLeave',       -- When leaving insert mode
+    'ModeChanged',       -- When changing modes
+    'CursorHold',        -- When cursor is stationary for a moment
+  }, {
+    group = augroup,
+    buffer = buf,
+    callback = highlight_cells,
+  })
+  
+  -- If conform.nvim is used, try to catch its events too
+  vim.api.nvim_create_autocmd('User', {
+    pattern = {'ConformFormatPre', 'ConformFormatPost', 'FormatPre', 'FormatPost'},
+    group = augroup,
+    callback = function()
+      vim.defer_fn(highlight_cells, 10)  -- Slight delay to ensure formatting is complete
+    end,
+  })
+  
+  -- Return the highlight function so it can be called manually if needed
+  return highlight_cells
 end
 
-highlight_cells()
+-- Set up for the current buffer
+local highlight_update = setup_code_cell_highlighting()
 
-vim.api.nvim_create_autocmd({ 'ModeChanged', 'BufWrite' }, {
-  group = vim.api.nvim_create_augroup('QuartoCellHighlight', { clear = true }),
-  buffer = buf,
-  callback = highlight_cells,
-})
+-- Create a command to manually trigger highlighting
+vim.api.nvim_create_user_command('RefreshCodeCells', highlight_update, {})

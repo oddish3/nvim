@@ -17,7 +17,8 @@ require 'config.redir'
 require 'utils.anki'
 require 'utils.autocap'
 require 'utils.spell'
-require('leap').create_default_mappings()
+require 'utils.wordcount'
+
 require('telescope').setup {
   extensions = {
     zotero = {
@@ -29,6 +30,9 @@ require('telescope').setup {
 }
 require('obsidian.yaml').quote_style = 'single'
 
+vim.api.nvim_set_hl(0, 'TermCursor', { fg = '#A6E3A1', bg = '#A6E3A1' })
+vim.api.nvim_set_hl(0, 'WinSeparator', { fg = 'dimgray', bg = '' })
+
 -- Silence "Is treesitter enabled?" errors
 local original_notify = vim.notify
 vim.notify = function(msg, ...)
@@ -38,7 +42,34 @@ vim.notify = function(msg, ...)
   return original_notify(msg, ...)
 end
 
+require('leap').create_default_mappings()
 
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'oil',
+  callback = function()
+    vim.bo.syntax = 'oil'
+  end,
+})
 
+local notify = vim.notify
+vim.notify = function(msg, ...)
+  if msg:match "no parser for 'oil'" then
+    return
+  end
+  notify(msg, ...)
+end
 
+vim.keymap.set('v', '<leader>al', function()
+  -- Get the start and end of the visual selection
+  local _, ls, cs = unpack(vim.fn.getpos "'<")
+  local _, le, ce = unpack(vim.fn.getpos "'>")
 
+  -- Choose a list prefix (adjust as needed)
+  local bullet = '- ' -- Use "*" for alternative unordered lists or "1. " for ordered
+
+  -- Apply the bullet to each selected line
+  vim.cmd(string.format('%d,%ds/^/%s/', ls, le, bullet))
+
+  -- Recalculate list
+  vim.cmd 'AutolistRecalculate'
+end, { noremap = true, silent = true })

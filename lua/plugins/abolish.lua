@@ -1,9 +1,9 @@
 return {
-  "tpope/vim-abolish",
+  'tpope/vim-abolish',
   -- enabled = false,
   lazy = false,
   config = function()
-    vim.cmd([[
+    vim.cmd [[
       " Health Economics Terms (previous terms remain the same)
       Abolish {,n}hs{,s} NHS
       Abolish {q,w,Q}{a,u}ly QALY
@@ -25,6 +25,9 @@ return {
       Abolish {qol,quol} QoL
 
       " Contractions - Complete List
+      iabbrev resp respectively
+      iabbrev teh the
+      iabbrev eq5d EQ-5D
       Abolish wont won't
       Abolish cant can't
       Abolish isnt isn't
@@ -76,6 +79,6 @@ return {
       Abolish theyve they've
       Abolish hadnt hadn't
       Abolish aint ain't
-    ]])
+    ]]
   end,
 }

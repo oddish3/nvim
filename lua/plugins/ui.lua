@@ -1,19 +1,38 @@
 return {
+{
+  "folke/snacks.nvim",
+   enabled = false,
+  ---@type snacks.Config
+  opts = {
+    image = {
+      -- your image configuration comes here
+      -- or leave it empty to use the default settings
+      -- refer to the configuration section below
+    }
+  }
+},
+  -- lazy.nvim
+  {
+    'm4xshen/hardtime.nvim',
+    dependencies = { 'MunifTanjim/nui.nvim' },
+    opts = {},
+  },
   -- telescope
   -- a nice seletion UI also to find and open files
   {
     'nvim-telescope/telescope.nvim',
-    lazy = true,
+    cmd = 'Telescope',
     dependencies = {
       { 'nvim-telescope/telescope-ui-select.nvim' },
       { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
       -- { 'nvim-telescope/telescope-dap.nvim' },
+      { 'benfowler/telescope-luasnip.nvim' },
       {
         'jmbuhr/telescope-zotero.nvim',
         dependencies = {
           { 'kkharji/sqlite.lua' },
         },
-        cmd = "Telescope zotero",
+        cmd = 'Telescope zotero',
         config = function()
           -- Create a module-level variable to track the current mode
           local use_locate_function = false
@@ -220,49 +239,6 @@ return {
     },
     cmd = 'Oil',
   },
-
-  { -- statusline
-    -- PERF: I found this to slow down the editor
-    'nvim-lualine/lualine.nvim',
-    enabled = false,
-    config = function()
-      local function macro_recording()
-        local reg = vim.fn.reg_recording()
-        if reg == '' then
-          return ''
-        end
-        return '📷[' .. reg .. ']'
-      end
-
-      ---@diagnostic disable-next-line: undefined-field
-      require('lualine').setup {
-        options = {
-          section_separators = '',
-          component_separators = '',
-          globalstatus = true,
-        },
-        sections = {
-          lualine_a = { 'mode', macro_recording },
-          lualine_b = { 'branch', 'diff', 'diagnostics' },
-          -- lualine_b = {},
-          lualine_c = { 'searchcount' },
-          lualine_x = { 'filetype' },
-          lualine_y = { 'progress' },
-          lualine_z = { 'location' },
-        },
-        extensions = { 'nvim-tree' },
-      }
-    end,
-  },
-
-  { -- nicer-looking tabs with close icons
-    'nanozuki/tabby.nvim',
-    enabled = false,
-    config = function()
-      require('tabby.tabline').use_preset 'tab_only'
-    end,
-  },
-
   { -- scrollbar
     'dstein64/nvim-scrollview',
     enabled = true,
@@ -270,61 +246,10 @@ return {
       current_only = true,
     },
   },
-
-  -- { -- highlight occurences of current word
-  --   'RRethy/vim-illuminate',
-  --   enabled = false,
-  -- },
-
-  -- {
-  --   'NStefan002/screenkey.nvim',
-  --   lazy = false,
-  -- },
-
-  { -- filetree
-    'nvim-tree/nvim-tree.lua',
-    enabled = true,
-    keys = {
-      { '<c-b>', ':NvimTreeToggle<cr>', desc = 'toggle nvim-tree' },
-    },
-    config = function()
-      require('nvim-tree').setup {
-        disable_netrw = true,
-        update_focused_file = {
-          enable = true,
-        },
-        git = {
-          enable = true,
-          ignore = false,
-          timeout = 500,
-        },
-        diagnostics = {
-          enable = true,
-        },
-      }
-    end,
-  },
-
-  -- or a different filetree
-  {
-    'nvim-neo-tree/neo-tree.nvim',
-    enabled = false,
-    branch = 'v3.x',
-    dependencies = {
-      'nvim-lua/plenary.nvim',
-      'nvim-tree/nvim-web-devicons', -- not strictly required, but recommended
-      'MunifTanjim/nui.nvim',
-    },
-    cmd = 'Neotree',
-    keys = {
-      { '<c-b>', ':Neotree toggle<cr>', desc = 'toggle nvim-tree' },
-    },
-  },
-
   -- show keybinding help window
   {
     'folke/which-key.nvim',
-    event = "VeryLazy",
+    event = 'VeryLazy',
     config = function()
       require('which-key').setup {}
       require 'config.keymap'
@@ -352,21 +277,20 @@ return {
       },
     },
   },
-
-  { -- or show symbols in the current file as breadcrumbs
-    'Bekaboo/dropbar.nvim',
-    enabled = function()
-      return vim.fn.has 'nvim-0.10' == 1
-    end,
-    dependencies = {
-      'nvim-telescope/telescope-fzf-native.nvim',
-    },
-    config = function()
-      -- turn off global option for windowline
-      vim.opt.winbar = nil
-      vim.keymap.set('n', '<leader>ls', require('dropbar.api').pick, { desc = '[s]ymbols' })
-    end,
-  },
+  -- { -- or show symbols in the current file as breadcrumbs
+  --   'Bekaboo/dropbar.nvim',
+  --   enabled = function()
+  --     return vim.fn.has 'nvim-0.10' == 1
+  --   end,
+  --   dependencies = {
+  --     'nvim-telescope/telescope-fzf-native.nvim',
+  --   },
+  --   config = function()
+  --     -- turn off global option for windowline
+  --     vim.opt.winbar = nil
+  --     vim.keymap.set('n', '<leader>ls', require('dropbar.api').pick, { desc = '[s]ymbols' })
+  --   end,
+  -- },
 
   { -- terminal
     'akinsho/toggleterm.nvim',
@@ -375,66 +299,17 @@ return {
       direction = 'float',
     },
   },
-
-  { -- show diagnostics list
-    -- PERF: Slows down insert mode if open and there are many diagnostics
-    'folke/trouble.nvim',
-    enabled = false,
-    config = function()
-      local trouble = require 'trouble'
-      trouble.setup {}
-      local function next()
-        trouble.next { skip_groups = true, jump = true }
-      end
-      local function previous()
-        trouble.previous { skip_groups = true, jump = true }
-      end
-      vim.keymap.set('n', ']t', next, { desc = 'next [t]rouble item' })
-      vim.keymap.set('n', '[t', previous, { desc = 'previous [t]rouble item' })
-    end,
-  },
-
   { -- show indent lines
     'lukas-reineke/indent-blankline.nvim',
-    event = "BufReadPost",
-    -- enabled = false,
+    event = 'BufReadPost',
     main = 'ibl',
     opts = {
       indent = { char = '│' },
     },
   },
-  { -- highlight markdown headings and code blocks etc.
-    'lukas-reineke/headlines.nvim',
-    enabled = false,
-    dependencies = 'nvim-treesitter/nvim-treesitter',
-    config = function()
-      require('headlines').setup {
-        quarto = {
-          query = vim.treesitter.query.parse(
-            'markdown',
-            [[
-                (fenced_code_block) @codeblock
-                ]]
-          ),
-          codeblock_highlight = 'CodeBlock',
-          treesitter_language = 'markdown',
-        },
-        markdown = {
-          query = vim.treesitter.query.parse(
-            'markdown',
-            [[
-                (fenced_code_block) @codeblock
-                ]]
-          ),
-          codeblock_highlight = 'CodeBlock',
-        },
-      }
-    end,
-  },
-
   { -- show images in nvim!
     '3rd/image.nvim',
-    enabled = true,
+    enabled = false,
     dev = false,
     ft = { 'markdown', 'quarto', 'vimwiki' },
     cond = function()
@@ -508,85 +383,6 @@ return {
         max_height_window_percentage = 30,
         kitty_method = 'normal',
       }
-
-      local function clear_all_images()
-        -- Get current buffer
-        local bufnr = vim.api.nvim_get_current_buf()
-
-        -- First attempt: Use image.nvim's API
-        local images = require('image').get_images { buffer = bufnr }
-        for _, img in ipairs(images) do
-          img:clear()
-        end
-
-        -- Second attempt: Force a redraw of the terminal
-        vim.cmd 'redraw!'
-
-        -- Third attempt: Send direct escape sequences to clear Kitty graphics
-        -- This uses a more aggressive approach that works with partial implementations
-        local clear_cmd = vim.fn.system 'printf "\\033[_Ga=d\\033\\\\"'
-        vim.fn.chansend(vim.v.stderr, clear_cmd)
-
-        -- Fourth attempt: Refresh buffer display
-        vim.cmd 'edit'
-
-        -- Fifth attempt: Toggle terminal mode briefly (helps with some terminals)
-        vim.cmd 'terminal'
-        vim.cmd 'bdelete!'
-
-        -- Final attempt: Force garbage collection
-        collectgarbage 'collect'
-      end
-
-      local function get_image_at_cursor(buf)
-        local images = image.get_images { buffer = buf }
-        local row = vim.api.nvim_win_get_cursor(0)[1] - 1
-        for _, img in ipairs(images) do
-          if img.geometry ~= nil and img.geometry.y == row then
-            local og_max_height = img.global_state.options.max_height_window_percentage
-            img.global_state.options.max_height_window_percentage = nil
-            return img, og_max_height
-          end
-        end
-        return nil
-      end
-
-      local create_preview_window = function(img, og_max_height)
-        local buf = vim.api.nvim_create_buf(false, true)
-        local win_width = vim.api.nvim_get_option_value('columns', {})
-        local win_height = vim.api.nvim_get_option_value('lines', {})
-        local win = vim.api.nvim_open_win(buf, true, {
-          relative = 'editor',
-          style = 'minimal',
-          width = win_width,
-          height = win_height,
-          row = 0,
-          col = 0,
-          zindex = 1000,
-        })
-        vim.keymap.set('n', 'q', function()
-          vim.api.nvim_win_close(win, true)
-          img.global_state.options.max_height_window_percentage = og_max_height
-        end, { buffer = buf })
-        return { buf = buf, win = win }
-      end
-
-      local handle_zoom = function(bufnr)
-        local img, og_max_height = get_image_at_cursor(bufnr)
-        if img == nil then
-          return
-        end
-
-        local preview = create_preview_window(img, og_max_height)
-        image.hijack_buffer(img.path, preview.win, preview.buf)
-      end
-
-      -- vim.keymap.set('n', '<leader>io', function()
-      --   local bufnr = vim.api.nvim_get_current_buf()
-      --   handle_zoom(bufnr)
-      -- end, { buffer = true, desc = 'image [o]pen' })
-
-      -- vim.keymap.set('n', '<leader>ic', clear_all_images, { desc = 'image [c]lear' })
     end,
   },
 }

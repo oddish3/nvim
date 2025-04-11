@@ -2,63 +2,69 @@
 
 return {
   {
-    "ggandor/leap.nvim",
-        -- enabled = false,
-    lazy = false
-  },
-  {
-    "OXY2DEV/markview.nvim",
-      enabled = false,
-    lazy = false
-  },
-{
-  'preservim/vim-markdown',
-      enabled = false,
-},
-  {
-  "iamcco/markdown-preview.nvim",
-            -- enabled = false,
-  cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
-  build = "cd app && yarn install",
-  init = function()
-    vim.g.mkdp_filetypes = { "markdown" }
-  end,
-  ft = { "markdown" },
-},
-  {
-    dir = "/Users/user/repos/public/zotcite",
-  -- "jalvesaq/zotcite",
+    'ggandor/leap.nvim',
     -- enabled = false,
-  dependencies = {
-    "nvim-treesitter/nvim-treesitter",
-    "nvim-telescope/telescope.nvim",
+    lazy = false,
   },
-  -- lazy = false,
-  config = function()
-      require("zotcite").setup({
-        python_path = "python3",
-        pdf_extractor = "pdfnotes2.py",
-        obsidian_vault_path = "/Users/user/repos/quartz/content/03-references/papers",
-        insert_obsidian_link = true
-      })
-  end,
-},
   {
-    'jakewvincent/mkdnflow.nvim',
-    enabled = false,
+    'epwalsh/pomo.nvim',
     config = function()
-      local mkdnflow = require 'mkdnflow'
-      mkdnflow.setup {}
+      require('pomo').setup {
+        { name = 'System' },
+        sessions = {
+          pomodoro = {
+            { name = 'Work', duration = '25m' },
+            { name = 'Short Break', duration = '5m' },
+            { name = 'Work', duration = '25m' },
+            { name = 'Short Break', duration = '5m' },
+            { name = 'Work', duration = '25m' },
+            { name = 'Long Break', duration = '15m' },
+          },
+        },
+      }
+    end,
+  },
+  -- {
+  --   'OXY2DEV/markview.nvim',
+  --   enabled = true,
+  --   lazy = false,
+  -- },
+  {
+    'iamcco/markdown-preview.nvim',
+    -- enabled = false,
+    cmd = { 'MarkdownPreviewToggle', 'MarkdownPreview', 'MarkdownPreviewStop' },
+    build = 'cd app && yarn install',
+    init = function()
+      vim.g.mkdp_filetypes = { 'markdown' }
+    end,
+    ft = { 'markdown' },
+  },
+  {
+    dir = '/Users/user/repos/public/zotcite',
+    -- "jalvesaq/zotcite",
+    -- enabled = false,
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter',
+      'nvim-telescope/telescope.nvim',
+    },
+    -- lazy = false,
+    config = function()
+      require('zotcite').setup {
+        python_path = 'python3',
+        pdf_extractor = 'pdfnotes2.py',
+        obsidian_vault_path = '/Users/user/repos/quartz/content/03-references/papers',
+        insert_obsidian_link = true,
+      }
     end,
   },
   {
     -- "epwalsh/obsidian.nvim",
-    dir = "/Users/user/repos/public/obsidian.nvim",
-    event = "InsertEnter",
-    -- enabled = false, 
-    version = "*", -- recommended, use latest release instead of latest commit
+    dir = '/Users/user/repos/public/obsidian.nvim',
+    event = 'InsertEnter',
+    -- enabled = false,
+    version = '*', -- recommended, use latest release instead of latest commit
     lazy = true,
-    ft = { "markdown", "quarto" },
+    ft = { 'markdown', 'quarto' },
     -- Replace the above line with this if you only want to load obsidian.nvim for markdown files in your vault:
     -- event = {
     --   -- If you want to use the home shortcut '~', here you need to call 'vim.fn.expand'.
@@ -69,26 +75,26 @@ return {
     -- },
     dependencies = {
       -- Required.
-      "nvim-lua/plenary.nvim",
-      "hrsh7th/nvim-cmp",
-      "nvim-telescope/telescope.nvim",
-      "nvim-treesitter/nvim-treesitter"
+      'nvim-lua/plenary.nvim',
+      'hrsh7th/nvim-cmp',
+      'nvim-telescope/telescope.nvim',
+      'nvim-treesitter/nvim-treesitter',
       -- see below for full list of optional dependencies 👇
     },
     config = function(_, opts)
       -- Setup obsidian.nvim
-      require("obsidian").setup(opts)
-    end, 
+      require('obsidian').setup(opts)
+    end,
     opts = {
       workspaces = {
         {
-          name = "Digital Garden",
-          path = "/Users/user/repos/quartz/content",
+          name = 'Digital Garden',
+          path = '/Users/user/repos/quartz/content',
         },
       },
       -- see below for full list of options 👇
       daily_notes = {
-        folder = "06-temporal/daily/",
+        folder = '06-temporal/daily/',
       },
       completion = {
         -- Set to false to disable completion.
@@ -100,22 +106,22 @@ return {
       --   folder = "/Users/user/vault/templates",
       -- },
       ui = {
-    enable = false,
+        enable = false,
       },
       -- Optional, configure key mappings. These are the defaults. If you don't want to set any keymappings this
       -- way then set 'mappings = {}'.
       mappings = {
         -- Overrides the 'gf' mapping to work on markdown/wiki links within your vault.
-        ["gf"] = {
+        ['gf'] = {
           action = function()
-            return require("obsidian").util.gf_passthrough()
+            return require('obsidian').util.gf_passthrough()
           end,
           opts = { noremap = false, expr = true, buffer = true },
         },
         -- Toggle check-boxes.
-        ["<leader>ch"] = {
+        ['<leader>ch'] = {
           action = function()
-            return require("obsidian").util.toggle_checkbox()
+            return require('obsidian').util.toggle_checkbox()
           end,
           opts = { buffer = true },
         },
@@ -135,17 +141,17 @@ return {
         if title ~= nil then
           -- Transform the title into a valid, slugified file name.
           local slug = title
-            :gsub("%s+", "-")              -- Replace spaces with hyphens
-            :gsub("[^A-Za-z0-9%-]", "")    -- Remove non-alphanumeric characters except hyphens
+            :gsub('%s+', '-') -- Replace spaces with hyphens
+            :gsub('[^A-Za-z0-9%-]', '') -- Remove non-alphanumeric characters except hyphens
             :lower()
           return slug
         else
           -- If no title is provided, generate a unique identifier using a UUID or random string.
-          local suffix = ""
-          for _ = 1, 6 do  -- Increased length for better uniqueness
-            suffix = suffix .. string.char(math.random(97, 122))  -- a-z
+          local suffix = ''
+          for _ = 1, 6 do -- Increased length for better uniqueness
+            suffix = suffix .. string.char(math.random(97, 122)) -- a-z
           end
-          return "note-" .. suffix
+          return 'note-' .. suffix
         end
       end,
 
@@ -154,18 +160,18 @@ return {
       ---@return string|obsidian.Path The full path to the new note.
       note_path_func = function(spec)
         local base_dir = spec.dir
-        
+
         -- Optional: Determine subdirectories based on categories or other metadata.
         -- For simplicity, we'll assume all notes go into a 'Evergreen' folder.
-        local evergreen_dir = base_dir 
-        
+        local evergreen_dir = base_dir
+
         -- Ensure the Evergreen directory exists.
         -- You might need to add code here to create the directory if it doesn't exist.
-        
+
         -- Create the full path with the slugified ID and .md extension.
         local path = evergreen_dir / tostring(spec.id)
-        
-        return path:with_suffix(".md")
+
+        return path:with_suffix '.md'
       end,
 
       -- Optional, customize how note file names are generated given the ID, target directory, and title.
@@ -209,15 +215,15 @@ return {
         local current_time = (file_info and file_info.mtime and file_info.mtime.sec) or os.time()
 
         -- Create a normalized title from the ID
-        local normalized_title = note.id:gsub("-", " "):gsub("^%l", string.upper):gsub("%s%l", string.upper)
+        local normalized_title = note.id:gsub('-', ' '):gsub('^%l', string.upper):gsub('%s%l', string.upper)
 
         -- Initialize with core fields
         local out = {
           id = note.id,
-          title = normalized_title,  -- Add the normalized title here
+          title = normalized_title, -- Add the normalized title here
           aliases = note.aliases,
           tags = note.tags,
-          draft = true
+          draft = true,
         }
 
         -- Add any custom metadata fields from the note
@@ -228,16 +234,16 @@ return {
         end
 
         -- Check if Creation Date already exists in metadata
-                if note.metadata and note.metadata["Creation Date"] then
+        if note.metadata and note.metadata['Creation Date'] then
           -- Use existing Creation Date
-          out["date"] = note.metadata["Creation Date"]
+          out['date'] = note.metadata['Creation Date']
         else
           -- Set new Creation Date only if it doesn't exist
-          out["date"] = os.date("%Y-%m-%dT%H:%M:%S", current_time)
+          out['date'] = os.date('%Y-%m-%dT%H:%M:%S', current_time)
         end
 
         -- Always update Last Date
-        out['Last Date'] = os.date("%Y-%m-%dT%H:%M:%S", current_time)
+        out['Last Date'] = os.date('%Y-%m-%dT%H:%M:%S', current_time)
 
         return out
       end,
@@ -257,8 +263,8 @@ return {
       -- file it will be ignored but you can customize this behavior here.
       ---@param img string
       follow_img_func = function(img)
-        print("Image path: " .. img)
-        vim.fn.jobstart { "qlmanage", "-p", img }  -- Mac OS quick look preview
+        print('Image path: ' .. img)
+        vim.fn.jobstart { 'qlmanage', '-p', img } -- Mac OS quick look preview
         -- vim.fn.jobstart({"xdg-open", url})  -- linux
         -- vim.cmd(':silent exec "!start ' .. url .. '"') -- Windows
       end,
@@ -284,29 +290,29 @@ return {
 
       -- Specify how to handle attachments.
       attachments = {
-    -- The default folder to place images in via `:ObsidianPasteImg`.
-    -- If this is a relative path it will be interpreted as relative to the vault root.
-    -- You can always override this per image by passing a full path to the command instead of just a filename.
-    img_folder = "assets/imgs",  -- This is the default
+        -- The default folder to place images in via `:ObsidianPasteImg`.
+        -- If this is a relative path it will be interpreted as relative to the vault root.
+        -- You can always override this per image by passing a full path to the command instead of just a filename.
+        img_folder = 'assets/imgs', -- This is the default
 
-    -- Optional, customize the default name or prefix when pasting images via `:ObsidianPasteImg`.
-    ---@return string
-    img_name_func = function()
-      -- Prefix image names with timestamp.
-      return string.format("%s-", os.time())
-    end,
+        -- Optional, customize the default name or prefix when pasting images via `:ObsidianPasteImg`.
+        ---@return string
+        img_name_func = function()
+          -- Prefix image names with timestamp.
+          return string.format('%s-', os.time())
+        end,
 
-    -- A function that determines the text to insert in the note when pasting an image.
-    -- It takes two arguments, the `obsidian.Client` and an `obsidian.Path` to the image file.
-    -- This is the default implementation.
-    ---@param client obsidian.Client
-    ---@param path obsidian.Path the absolute path to the image file
-    ---@return string
-    img_text_func = function(client, path)
-      path = client:vault_relative_path(path) or path
-      return string.format("![%s](%s)", path.name, path)
-    end,
+        -- A function that determines the text to insert in the note when pasting an image.
+        -- It takes two arguments, the `obsidian.Client` and an `obsidian.Path` to the image file.
+        -- This is the default implementation.
+        ---@param client obsidian.Client
+        ---@param path obsidian.Path the absolute path to the image file
+        ---@return string
+        img_text_func = function(client, path)
+          path = client:vault_relative_path(path) or path
+          return string.format('![%s](%s)', path.name, path)
+        end,
+      },
+    },
   },
-    }
-  }
 }

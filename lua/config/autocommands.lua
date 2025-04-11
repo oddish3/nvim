@@ -148,80 +148,73 @@ categories:
   end,
 })
 
-local function handle_docx()
-  -- Get the current file path
-  local file = vim.fn.expand '%:p'
+-- Function to open files externally (more robust version)
+local function open_externally(file_path)
+  -- Determine the OS-specific open command
+  local open_command
+  -- Use 'macunix' for macOS, as 'mac' can be ambiguous in some contexts
+  if vim.fn.has('macunix') then
+    open_command = 'open'
+  elseif vim.fn.has('win32') then
+    -- Using 'start ""' is safer on Windows to handle paths correctly
+    open_command = 'start ""'
+  else -- Assume Linux/BSD/other Unix-like
+    -- Check if xdg-open exists, fallback otherwise if needed
+    if vim.fn.executable('xdg-open') == 1 then
+      open_command = 'xdg-open'
+    else
+      vim.notify('Could not find xdg-open. Please install it or configure an alternative.', vim.log.levels.ERROR)
+      return -- Stop if no open command is found
+    end
+  end
 
-  -- Close the current buffer
-  vim.cmd 'bdelete'
+  -- Properly escape the file path for shell execution
+  local escaped_file_path = vim.fn.shellescape(file_path)
 
-  -- Define your preferred application for opening .docx files
-  local open_command = vim.fn.has 'mac' == 1 and 'open' or vim.fn.has 'win32' == 1 and 'start' or 'xdg-open'
+  -- Construct the full command
+  local command = open_command .. ' ' .. escaped_file_path
 
-  -- Escape spaces in the filename
-  file = file:gsub(' ', '\\ ')
-
-  -- Execute the command to open the file with the default application
-  vim.fn.system(open_command .. ' ' .. file)
+  -- Execute the command asynchronously using jobstart to avoid blocking Neovim
+  vim.fn.jobstart(command, {
+    detach = true, -- Run the process independently of Neovim
+    -- Hide the command window on Windows if 'start' pops one up briefly
+    hide = vim.fn.has('win32') == 1,
+  })
 
   -- Notify the user
-  vim.notify('Opening ' .. vim.fn.fnamemodify(file, ':t') .. ' with external application', vim.log.levels.INFO)
+  vim.notify('Attempting to open ' .. vim.fn.fnamemodify(file_path, ':t') .. ' externally', vim.log.levels.INFO)
+
+  -- *** Crucial Part for BufReadCmd ***
+  -- Signal to Neovim that we have handled the command and it should not
+  -- proceed with loading the file into a buffer.
+  -- Setting vim.v.cmdarg = '' is one way.
+  -- Creating a temporary buffer and immediately setting options to discard it works well too.
+  vim.cmd('setlocal buflisted nobuflisted') -- Don't list this buffer
+  vim.cmd('setlocal bufhidden=wipe')      -- Delete the buffer when hidden (immediately)
+
+  -- Alternative signal (often used):
+  -- vim.v.cmdarg = '' -- Clear arguments to prevent default :read action
+
+  -- No need for bdelete, as we prevent the buffer from being properly loaded/kept.
 end
 
--- Auto-detect Office files by extension
-vim.api.nvim_create_autocmd({ 'BufReadPre', 'BufNewFile' }, {
-  pattern = { '*.docx', '*.xlsx', '*.pptx', '*.DOCX', '*.XLSX', '*.PPTX' },
-  callback = function()
-    handle_docx()
-  end,
-  desc = 'Handle Office files with external application',
-})
+-- Create an autocommand group to easily manage our autocommands
+local externalOpenGroup = vim.api.nvim_create_augroup('ExternalOpeners', { clear = true })
 
--- Handle ZIP files that might be Office documents
-vim.api.nvim_create_autocmd({ 'BufReadPost' }, {
-  callback = function()
-    local filename = vim.fn.expand '%:p'
-    local filetype = vim.bo.filetype
-
-    -- Check if file is being detected as a zip file
-    if filetype == 'zip' then
-      -- Check if the file has an Office extension
-      if
-        filename:match '%.docx$'
-        or filename:match '%.xlsx$'
-        or filename:match '%.pptx$'
-        or filename:match '%.DOCX$'
-        or filename:match '%.XLSX$'
-        or filename:match '%.PPTX$'
-      then
-        handle_docx()
-      end
-    end
-  end,
-  desc = 'Handle Office files detected as ZIP files',
-})
-
--- For oil.nvim integration - detect when a user tries to open a docx file
-vim.api.nvim_create_autocmd({ 'BufEnter' }, {
-  callback = function()
-    -- Check if buffer is oil.nvim buffer
-    if vim.bo.filetype == 'oil' then
-      -- Add a mapping to open Office files with external app when selected in oil
-      vim.api.nvim_buf_set_keymap(0, 'n', '<CR>', [[<cmd>lua require("oil").select()<CR>]], { noremap = true, silent = true })
-    end
-  end,
-  desc = 'Add mapping for oil.nvim to open Office files',
-})
-
+-- Intercept attempts to read specific file types using BufReadCmd
 vim.api.nvim_create_autocmd('BufReadCmd', {
-  pattern = { '*.docx', '*.xlsx', '*.pptx', '*.DOCX', '*.XLSX', '*.PPTX' },
+  group = externalOpenGroup,
+  pattern = {
+    -- Office files (case-insensitive using Lua patterns)
+    '*.docx', '*.DOCX',
+    '*.xlsx', '*.XLSX',
+    '*.pptx', '*.PPTX',
+    -- PDF files (case-insensitive)
+    '*.pdf', '*.PDF',
+  },
   callback = function(args)
-    local file = args.file
-    local open_command = vim.fn.has 'mac' == 1 and 'open' or vim.fn.has 'win32' == 1 and 'start' or 'xdg-open'
-    -- Execute the command to open the file externally
-    vim.fn.system(open_command .. ' ' .. vim.fn.shellescape(file))
-    vim.notify('Opening ' .. vim.fn.fnamemodify(file, ':t') .. ' with external application', vim.log.levels.INFO)
-    -- Prevent the file from being loaded in Neovim
+    -- args.file contains the full path to the file Neovim is trying to read
+    open_externally(args.file)
   end,
-  desc = 'Open Office files externally before loading them',
+  desc = 'Open Office documents and PDFs externally',
 })

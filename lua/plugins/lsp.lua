@@ -1,4 +1,3 @@
-
 return {
   -- {
   --
@@ -18,14 +17,23 @@ return {
   --     }
   --   },
   -- },
-
+  -- {
+  --   'nvimdev/lspsaga.nvim',
+  --   config = function()
+  --     require('lspsaga').setup {}
+  --   end,
+  --   dependencies = {
+  --     'nvim-treesitter/nvim-treesitter', -- optional
+  --     'nvim-tree/nvim-web-devicons', -- optional
+  --   },
+  -- },
   {
     'neovim/nvim-lspconfig',
-    event = "VeryLazy",
-        -- enable = false,
+    -- event = 'VeryLazy',
+    -- enable = false,
     dependencies = {
-      { 'williamboman/mason.nvim', cmd = "Mason" },
-      { 'williamboman/mason-lspconfig.nvim', cmd = "Mason" },
+      { 'williamboman/mason.nvim', cmd = { 'Mason', 'MasonInstall' } },
+      { 'williamboman/mason-lspconfig.nvim', cmd = 'Mason' },
       { 'WhoIsSethDaniel/mason-tool-installer.nvim' },
       {
         {
@@ -52,7 +60,7 @@ return {
         },
         -- { "folke/neodev.nvim", enabled = false }, -- make sure to uninstall or disable neodev.nvim
       },
-      { 'folke/neoconf.nvim', opts = {}, enabled = false },
+      -- { 'folke/neoconf.nvim', opts = {}, enabled = false },
     },
     config = function()
       local lspconfig = require 'lspconfig'
@@ -72,6 +80,8 @@ return {
           'jupytext',
           'air',
           'prettier',
+          'tinymist',
+          'markdown_oxide',
         },
       }
 
@@ -91,20 +101,24 @@ return {
           ---@diagnostic disable-next-line: inject-field
           client.server_capabilities.document_formatting = true
 
-          map('gS', vim.lsp.buf.document_symbol, '[g]o so [S]ymbols')
-          map('gD', vim.lsp.buf.type_definition, '[g]o to type [D]efinition')
-          map('gd', vim.lsp.buf.definition, '[g]o to [d]efinition')
-          map('K', vim.lsp.buf.hover, '[K] hover documentation')
-          map('gh', vim.lsp.buf.signature_help, '[g]o to signature [h]elp')
-          map('gI', vim.lsp.buf.implementation, '[g]o to [I]mplementation')
-          map('gr', vim.lsp.buf.references, '[g]o to [r]eferences')
-          map('[d', function () vim.diagnostic.jump({count = 1}) end,'previous [d]iagnostic ')
-          map(']d', function () vim.diagnostic.jump({count = -1}) end, 'next [d]iagnostic ')
-          map('<leader>ll', vim.lsp.codelens.run, '[l]ens run')
-          map('<leader>lR', vim.lsp.buf.rename, '[l]sp [R]ename')
-          map('<leader>lf', vim.lsp.buf.format, '[l]sp [f]ormat')
-          vmap('<leader>lf', vim.lsp.buf.format, '[l]sp [f]ormat')
-          map('<leader>lq', vim.diagnostic.setqflist, '[l]sp diagnostic [q]uickfix')
+          -- map('gS', vim.lsp.buf.document_symbol, '[g]o so [S]ymbols')
+          -- map('gD', vim.lsp.buf.type_definition, '[g]o to type [D]efinition')
+          -- map('gd', vim.lsp.buf.definition, '[g]o to [d]efinition')
+          -- map('K', vim.lsp.buf.hover, '[K] hover documentation')
+          -- map('gh', vim.lsp.buf.signature_help, '[g]o to signature [h]elp')
+          -- map('gI', vim.lsp.buf.implementation, '[g]o to [I]mplementation')
+          -- map('gr', vim.lsp.buf.references, '[g]o to [r]eferences')
+          -- map('[d', function()
+          --   vim.diagnostic.jump { count = 1 }
+          -- end, 'previous [d]iagnostic ')
+          -- map(']d', function()
+          --   vim.diagnostic.jump { count = -1 }
+          -- end, 'next [d]iagnostic ')
+          -- map('<leader>ll', vim.lsp.codelens.run, '[l]ens run')
+          -- map('<leader>lR', vim.lsp.buf.rename, '[l]sp [R]ename')
+          -- map('<leader>lf', vim.lsp.buf.format, '[l]sp [f]ormat')
+          -- vmap('<leader>lf', vim.lsp.buf.format, '[l]sp [f]ormat')
+          -- map('<leader>lq', vim.diagnostic.setqflist, '[l]sp diagnostic [q]uickfix')
         end,
       })
 
@@ -130,6 +144,13 @@ return {
       --   root_dir = util.root_pattern('.git', '.marksman.toml', '_quarto.yml'),
       -- }
 
+      require('lspconfig').r_language_server.setup {
+        on_attach = function(client, _)
+          client.server_capabilities.documentFormattingProvider = false
+          client.server_capabilities.documentRangeFormattingProvider = false
+        end,
+      }
+
       -- lspconfig.r_language_server.setup {
       --   capabilities = capabilities,
       --   flags = lsp_flags,
@@ -142,49 +163,33 @@ return {
       --   },
       -- }
 
-      lspconfig.cssls.setup {
-        capabilities = capabilities,
-        flags = lsp_flags,
-      }
-
-      lspconfig.html.setup {
-        capabilities = capabilities,
-        flags = lsp_flags,
-      }
-
-      lspconfig.emmet_language_server.setup {
-        capabilities = capabilities,
-        flags = lsp_flags,
-      }
-
-      lspconfig.yamlls.setup {
-        capabilities = capabilities,
-        flags = lsp_flags,
-        settings = {
-          yaml = {
-            schemaStore = {
-              enable = true,
-              url = '',
-            },
-          },
-        },
-      }
-
-      lspconfig.jsonls.setup {
-        capabilities = capabilities,
-        flags = lsp_flags,
-      }
-
-      lspconfig.dotls.setup {
-        capabilities = capabilities,
-        flags = lsp_flags,
-      }
-
       lspconfig.ts_ls.setup {
         capabilities = capabilities,
         flags = lsp_flags,
         filetypes = { 'js', 'javascript', 'typescript', 'ojs' },
       }
+
+      require('lspconfig')['tinymist'].setup {
+        settings = {
+          formatterMode = 'typstyle',
+          exportPdf = 'onType',
+          semanticTokens = 'disable',
+        },
+      }
+
+      -- local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protocol.make_client_capabilities())
+      -- require('lspconfig').markdown_oxide.setup {
+      --   -- Ensure that dynamicRegistration is enabled! This allows the LS to take into account actions like the
+      --   -- Create Unresolved File code action, resolving completions for unindexed code blocks, ...
+      --   capabilities = vim.tbl_deep_extend('force', capabilities, {
+      --     workspace = {
+      --       didChangeWatchedFiles = {
+      --         dynamicRegistration = true,
+      --       },
+      --     },
+      --   }),
+      --   on_attach = on_attach, -- configure your on attach config
+      -- }
 
       local function get_quarto_resource_path()
         local function strsplit(s, delimiter)
@@ -240,51 +245,16 @@ return {
         },
       }
 
-      lspconfig.vimls.setup {
-        capabilities = capabilities,
-        flags = lsp_flags,
+      require('lspconfig').air.setup {
+        on_attach = function(_, bufnr)
+          vim.api.nvim_create_autocmd('BufWritePre', {
+            buffer = bufnr,
+            callback = function()
+              vim.lsp.buf.format()
+            end,
+          })
+        end,
       }
-
-
-      lspconfig.julials.setup {
-        capabilities = capabilities,
-        flags = lsp_flags,
-      }
-
-      lspconfig.bashls.setup {
-        capabilities = capabilities,
-        flags = lsp_flags,
-        filetypes = { 'sh', 'bash' },
-      }
-
-      -- Add additional languages here.
-      -- See `:h lspconfig-all` for the configuration.
-      -- Like e.g. Haskell:
-      -- lspconfig.hls.setup {
-      --   capabilities = capabilities,
-      --   flags = lsp_flags
-      -- }
-
-      -- lspconfig.clangd.setup {
-      --   capabilities = capabilities,
-      --   flags = lsp_flags,
-      -- }
-
-      lspconfig.rust_analyzer.setup{
-        capabilities = capabilities,
-        settings = {
-          ['rust-analyzer'] = {
-            diagnostics = {
-              enable = false;
-            }
-          }
-        }
-     }
-
-      -- lspconfig.ruff_lsp.setup {
-      --   capabilities = capabilities,
-      --   flags = lsp_flags,
-      -- }
 
       -- See https://github.com/neovim/neovim/issues/23291
       -- disable lsp watcher.
@@ -311,6 +281,30 @@ return {
         root_dir = function(fname)
           return util.root_pattern('.git', 'setup.py', 'setup.cfg', 'pyproject.toml', 'requirements.txt')(fname) or util.path.dirname(fname)
         end,
+      }
+
+      local spell_words = {}
+      for word in io.open(vim.fn.stdpath 'config' .. '/spell/en.utf-8.add', 'r'):lines() do
+        table.insert(spell_words, word)
+      end
+
+      lspconfig.ltex.setup {
+        filetypes = { 'markdown' },
+        settings = {
+          ltex = {
+            language = 'en-GB',
+            enabled = true,
+            dictionary = {
+              ['en-GB'] = spell_words,
+            },
+            disabledRules = {
+              ['en-GB'] = {
+                'OXFORD_SPELLING_Z_NOT_S', -- Stops suggesting '-ize' over '-ise'
+                -- Add any other rule IDs you want to disable here
+              },
+            },
+          },
+        },
       }
     end,
   },

@@ -4,23 +4,56 @@ local M = {}
 vim.o.spell = true
 vim.o.spelllang = 'en_gb'
 
--- Define a function to set up code block spell exclusion
-local function setup_spell_exclusion()
-  -- Get the syntax groups for code blocks and math zones
-  vim.cmd [[
-    syntax match markdownCodeBlock /```\_.\{-}```/ contains=@NoSpell
-    syntax match markdownMathBlock /\$\$\_.\{-}\$\$/ contains=@NoSpell
-    syntax match markdownInlineMath /\$[^$]\_.\{-}\$/ contains=@NoSpell
-    syntax match quartoCodeBlock /```{\_.\{-}}\_.\{-}```/ contains=@NoSpell
-    syntax match quartoInlineCode /`r \_.\{-}`/ contains=@NoSpell
-  ]]
+-- Create a function that adds both code block spell exclusion methods
+local function no_spell_in_code()
+  -- Only for relevant file types
+  local ft = vim.bo.filetype
+  if ft ~= 'markdown' and ft ~= 'quarto' and ft ~= 'rmd' then
+    return
+  end
+  
+  -- Make absolutely sure we add this option
+  vim.opt_local.spellcapcheck = ''
+  
+  -- Add syntax rules with the highest priority possible
+  pcall(function()
+    vim.cmd([[
+      syntax clear
+      syntax sync fromstart
+      
+      " Basic markdown elements 
+      syntax region markdownCode start=/```/ end=/```/ contains=@NoSpell keepend
+      syntax region markdownCode start=/`/ end=/`/ contains=@NoSpell oneline
+      syntax region mathBlock start=/\$\$/ end=/\$\$/ contains=@NoSpell keepend
+      syntax region mathInline start=/\$/ end=/\$/ contains=@NoSpell oneline
+      syntax region quartoCode start=/```{/ end=/```/ contains=@NoSpell keepend
+      
+      " Force highest priority to our rules
+      syntax sync maxlines=100
+      hi def link markdownCode Comment
+      hi def link mathBlock Comment
+      hi def link mathInline Comment
+      hi def link quartoCode Comment
+    ]])
+  end)
 end
 
--- Set up file type detection for spell exclusion
-vim.api.nvim_create_autocmd({ 'FileType' }, {
-  pattern = { 'markdown', 'quarto', 'rmd' },
-  callback = setup_spell_exclusion,
+-- Set up multiple events to ensure this runs
+local spell_group = vim.api.nvim_create_augroup("ForceNoSpellInCode", { clear = true })
+
+-- Apply on various events
+vim.api.nvim_create_autocmd({"BufReadPost", "BufWritePost", "BufEnter", "FileType"}, {
+  pattern = {"*.md", "*.qmd", "*.rmd"},
+  callback = function()
+    -- Add a small delay to ensure this runs after other plugins
+    vim.defer_fn(no_spell_in_code, 100)
+  end,
+  group = spell_group,
 })
+
+-- Manual command
+vim.api.nvim_create_user_command("NoSpellInCode", no_spell_in_code, {})
+
 
 -- Function to check if current position is in code block
 -- function M.is_in_code_block()

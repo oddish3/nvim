@@ -42,9 +42,9 @@ local function auto_capitalize_md()
   end
 
   -- Use luasnip-latex-snippets for code block and math detection
-  local latex_snippets = require('luasnip-latex-snippets')
-  
-  -- Don't capitalize if we're in a code block or math zone
+  local latex_snippets = require 'luasnip-latex-snippets'
+
+  -- don't capitalize if we're in a code block or math zone
   if latex_snippets.is_in_code_block() or latex_snippets.is_in_math() then
     return
   end
@@ -77,7 +77,7 @@ local function auto_capitalize_md()
 
   -- Get the character before the cursor
   local prev_char = line:sub(col_num, col_num)
-  local trimmed_line = line:sub(1, col_num):match('^%s*(.-)%s*$')
+  local trimmed_line = line:sub(1, col_num):match '^%s*(.-)%s*$'
 
   -- Patterns after which to capitalize
   local patterns = {
@@ -157,7 +157,6 @@ end, {})
 
 -- Optional: Add keymapping to toggle auto-capitalization
 vim.keymap.set('n', '<leader>tc', ':ToggleAutoCapitalize<CR>', { noremap = true, silent = true })
-
 
 -- Return the module table
 return M
